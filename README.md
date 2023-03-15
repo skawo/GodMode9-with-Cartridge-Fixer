@@ -1,6 +1,6 @@
 <h1>Nintendo 3DS Cartridge Fixer</h1>
 
-<h2>Warning: This is EXPERIMENTAL software. Only run this on non-working cartridges. There is NO guarantee this will fix your cartridge, and it might, in fact, make it worse.
+<h2>Warning: This is EXPERIMENTAL software. Only run this on non-working cartridges. There is NO guarantee this will fix your cartridge, and it might, in fact, make it worse.</h2>
 
 3DS cartridges contain a NAND flash chip, which, if unused for long periods of time, may become corrupted. Thankfully, the controller chip has an error correction function which can restore the corrupted data. 
 
@@ -16,7 +16,7 @@ This fork of GodMode 9 has been edited to make a more extensive use of this func
 4. Choose "NCSD image options..."
 5. Choose "Fix cartridge corruption".
 
-You can hold Y when selecting this option to enable logging.<br>
+You can hold Y when selecting this option to enable logging. Logs are saved to /gm9/out<br>
 You can hold SELECT when selecting this option to make refresh run on EVERY read. This is not typically recommended.
 
 <b>Credits:</b><br>
