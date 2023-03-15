@@ -43,6 +43,8 @@
 #define BOOTMENU_KEY    BUTTON_START
 #endif
 
+extern int refresh_call_every;
+
 
 typedef struct {
     char path[256];
@@ -151,6 +153,7 @@ u32 SplashInit(const char* modestr) {
         "--------------------------------", "https://github.com/d0k3/GodMode9",
         "Releases:", "https://github.com/d0k3/GodMode9/releases/", // this won't fit with a 8px width font
         "Hourlies:", "https://d0k3.secretalgorithm.com/");
+    DrawStringF(TOP_SCREEN, 0, 0, COLOR_STD_FONT, COLOR_STD_BG, "Cartridge Fixer Fork v1.0 by Skawo. \nThanks to Pleasehelpme2 and BreadLoaf for testing.");
     DrawStringF(BOT_SCREEN, pos_xu, pos_yu, COLOR_STD_FONT, COLOR_STD_BG, "%s", loadstr);
     DrawStringF(BOT_SCREEN, pos_xb, pos_yu, COLOR_STD_FONT, COLOR_STD_BG, "built: " DBUILTL);
 
@@ -1313,8 +1316,19 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
         return 0;
     }
     else if (user_select == calcsha1) { // -> calculate SHA-1
+
+        if (CheckButton(BUTTON_SELECT))
+        {
+            if (ShowPrompt(true, "This will run refresh on EVERY read. \nOnly use this option for broken cartridges. \nAre you SURE you want to do this?"))
+                refresh_call_every = 0;
+            else
+                return 0;
+        }
+
         ShaCalculator(file_path, true);
         GetDirContents(current_dir, current_path);
+
+            refresh_call_every = 10000;
         return 0;
     }
     else if (user_select == calccmac) { // -> calculate CMAC
@@ -1366,7 +1380,18 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
         return 0;
     }
     else if (user_select == copystd) { // -> copy to OUTPUT_PATH
+        
+        if (CheckButton(BUTTON_SELECT))
+        {
+            if (ShowPrompt(true, "This will run refresh on EVERY read. \nOnly use this option for broken cartridges. \nAre you SURE you want to do this?"))
+                refresh_call_every = 0;
+            else
+                return 0;
+        }
+
         StandardCopy(cursor, scroll);
+
+        refresh_call_every = 10000;
         return 0;
     }
     else if (user_select == inject) { // -> inject data from clipboard
@@ -1413,6 +1438,7 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
     n_opt = 0;
     int show_info = (titleinfo) ? ++n_opt : -1;
     int mount = (mountable) ? ++n_opt : -1;
+    int corruptfix = (mountable && (filetype & GAME_NCSD)) ? ++n_opt : -1; 
     int restore = (restorable) ? ++n_opt : -1;
     int ebackup = (ebackupable) ? ++n_opt : -1;
     int ncsdfix = (ncsdfixable) ? ++n_opt : -1;
@@ -1447,7 +1473,9 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
     int agbexport = (agbexportable) ? ++n_opt : -1;
     int agbimport = (agbimportable) ? ++n_opt : -1;
     int setup = (setable) ? ++n_opt : -1;
+
     if (mount > 0) optionstr[mount-1] = (filetype & GAME_TMD) ? "Mount CXI/NDS to drive" : "Mount image to drive";
+    if (corruptfix > 0) optionstr[corruptfix-1] = "Fix cartridge corruption";
     if (restore > 0) optionstr[restore-1] = "Restore SysNAND (safe)";
     if (ebackup > 0) optionstr[ebackup-1] = "Update embedded backup";
     if (ncsdfix > 0) optionstr[ncsdfix-1] = "Rebuild NCSD header";
@@ -1521,59 +1549,34 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
         }
         return 0;
     }
-    else if (user_select == decrypt) { // -> decrypt game file
-        if (cryptable_inplace) {
-            optionstr[0] = "Decrypt to " OUTPUT_PATH;
-            optionstr[1] = "Decrypt inplace";
-            user_select = (int) ((n_marked > 1) ?
-                ShowSelectPrompt(2, optionstr, "%s\n(%lu files selected)", pathstr, n_marked) :
-                ShowSelectPrompt(2, optionstr, "%s%s", pathstr, tidstr));
-        } else user_select = 1;
-        bool inplace = (user_select == 2);
-        if (!user_select) { // do nothing when no choice is made
-        } else if ((n_marked > 1) && ShowPrompt(true, "Try to decrypt all %lu selected files?", n_marked)) {
-            u32 n_success = 0;
-            u32 n_unencrypted = 0;
-            u32 n_other = 0;
-            ShowString("Trying to decrypt %lu files...", n_marked);
-            for (u32 i = 0; i < current_dir->n_entries; i++) {
-                const char* path = current_dir->entry[i].path;
-                if (!current_dir->entry[i].marked)
-                    continue;
-                if (!(IdentifyFileType(path) & filetype & TYPE_BASE)) {
-                    n_other++;
-                    continue;
-                }
-                if (!(filetype & BIN_KEYDB) && (CheckEncryptedGameFile(path) != 0)) {
-                    n_unencrypted++;
-                    continue;
-                }
-                DrawDirContents(current_dir, (*cursor = i), scroll);
-                if (!(filetype & BIN_KEYDB) && (CryptGameFile(path, inplace, false) == 0)) n_success++;
-                else if ((filetype & BIN_KEYDB) && (CryptAesKeyDb(path, inplace, false) == 0)) n_success++;
-                else { // on failure: show error, continue
-                    char lpathstr[UTF_BUFFER_BYTESIZE(32)];
-                    TruncateString(lpathstr, path, 32, 8);
-                    if (ShowPrompt(true, "%s\nDecryption failed\n \nContinue?", lpathstr)) continue;
-                    else break;
-                }
-                current_dir->entry[i].marked = false;
-            }
-            if (n_other || n_unencrypted) {
-                ShowPrompt(false, "%lu/%lu files decrypted ok\n%lu/%lu not encrypted\n%lu/%lu not of same type",
-                    n_success, n_marked, n_unencrypted, n_marked, n_other, n_marked);
-            } else ShowPrompt(false, "%lu/%lu files decrypted ok", n_success, n_marked);
-            if (!inplace && n_success) ShowPrompt(false, "%lu files written to %s", n_success, OUTPUT_PATH);
-        } else {
-            if (!(filetype & BIN_KEYDB) && (CheckEncryptedGameFile(file_path) != 0)) {
-                ShowPrompt(false, "%s\nFile is not encrypted", pathstr);
-            } else {
-                u32 ret = (filetype & BIN_KEYDB) ? CryptAesKeyDb(file_path, inplace, false) :
-                    CryptGameFile(file_path, inplace, false);
-                if (inplace || (ret != 0)) ShowPrompt(false, "%s\nDecryption %s", pathstr, (ret == 0) ? "success" : "failed");
-                else ShowPrompt(false, "%s\nDecrypted to %s", pathstr, OUTPUT_PATH);
-            }
+    else if (user_select == corruptfix)
+    {
+        if (n_marked > 1)
+        {
+            ShowPrompt(false, "You can only fix one file at a time.");
+            return 0;
         }
+
+        bool log = false;
+
+        if (CheckButton(BUTTON_Y))
+        {
+            ShowPrompt(false, "Logging has been turned on.");
+            log = true; 
+        }
+                
+        if (CheckButton(BUTTON_SELECT))
+        {
+            if (ShowPrompt(true, "This will run refresh on EVERY read. \nOnly use this option for broken cartridges. \nAre you SURE you want to do this?"))
+                refresh_call_every = 0;
+            else
+                return 0;
+        }
+
+        ShowPrompt(false, "Corruption fix %s. Run verify.", (AttemptFixNcsdFile(file_path, log) == 0) ? "succeeded" : "failed");
+
+        refresh_call_every = 10000;
+
         return 0;
     }
     else if (user_select == encrypt) { // -> encrypt game file

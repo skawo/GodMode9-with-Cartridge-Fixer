@@ -11,6 +11,7 @@
 #include "unittype.h"
 #include "aes.h"
 #include "sha.h"
+#include "rtc.h"
 
 // use NCCH crypto defines for everything
 #define CRYPTO_DECRYPT  NCCH_NOCRYPTO
@@ -19,6 +20,9 @@
 // partitionA path
 #define PART_PATH       "D:/partitionA.bin"
 
+extern bool force_refresh;
+#define LOG_FILE_BUF_SIZE STD_BUFFER_SIZE
+//#define TEST_MODE 0
 
 u32 GetCbcBlocks(FIL* file, void* buffer, u64 offset, u32 count, u8* titlekey, u8* forced_iv) {
     u8 iv[16] __attribute__((aligned(4)));
@@ -76,6 +80,100 @@ u32 GetNcchHeaders(NcchHeader* ncch, NcchExtHeader* exthdr, ExeFsHeader* exefs, 
     }
 
     return 0;
+}
+
+u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, NcchHeader* ncch, ExeFsHeader* exefs, u32 offset_back, char** outstr, bool log) 
+{
+    u32 offset_data = fvx_tell(file) - offset_ncch;
+    u8 hash[32];
+    char tempstr[64];
+    char hash_str[32+1];
+
+    u8* buffer = (u8*) malloc(STD_BUFFER_SIZE);
+    if (!buffer) return 1;
+
+    bool hash_match = false;
+
+	u32 pos_x = (SCREEN_WIDTH_MAIN - 240) / 2;
+	u32 pos_y = (SCREEN_HEIGHT / 2) - 12 - 2 - 10;
+
+    bool was_bad = false;
+    int was_bad_retries = 0;
+
+    while (!hash_match)
+    {
+        if (CheckButton(BUTTON_B))
+        {
+            free(buffer);
+            force_refresh = false;
+            return 1;
+        }
+
+        sha_init(SHA256_MODE);
+
+        u32 buffersize = force_refresh ? 0x200 : STD_BUFFER_SIZE;
+
+        for (u32 i = 0; i < size_data; i += buffersize) 
+        {
+            u32 read_bytes = min(buffersize, (size_data - i));
+            UINT bytes_read;
+            fvx_read(file, buffer, read_bytes, &bytes_read);
+            DecryptNcch(buffer, offset_data + i, read_bytes, ncch, exefs);
+            sha_update(buffer, read_bytes);
+        }
+
+        sha_get(hash);
+
+        DrawString(MAIN_SCREEN, "Current hash:", pos_x, pos_y + 64, COLOR_STD_FONT, COLOR_STD_BG);
+        snprintf(hash_str, 32+1, "%016llX%016llX", getbe64(hash + 16), getbe64(hash + 24));
+        DrawString(MAIN_SCREEN, hash_str, pos_x, pos_y + 74, COLOR_STD_FONT, COLOR_STD_BG);
+
+        DrawString(MAIN_SCREEN, "Expected:", pos_x, pos_y + 94, COLOR_STD_FONT, COLOR_STD_BG);
+        snprintf(hash_str, 32+1, "%016llX%016llX",getbe64(expected + 16), getbe64(expected + 24));
+        DrawString(MAIN_SCREEN, hash_str, pos_x, pos_y + 104, COLOR_STD_FONT, COLOR_STD_BG);
+
+        hash_match = memcmp(hash, expected, 32) ? 0 : 1;
+
+        #ifdef TEST_MODE
+
+        int r = rand() % 100;
+        
+        if (r == 0)
+            hash_match = 0;
+
+        #endif
+
+        if (!hash_match)
+        {
+            DrawString(MAIN_SCREEN, "HASH MISMATCH. Attempting refresh.                       ", pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
+            fvx_lseek(file, offset_back);
+            was_bad = true;
+            was_bad_retries = 5;
+            force_refresh = true;
+        }
+        else
+        {
+            if (was_bad_retries)
+            {
+                snprintf(tempstr, 64, "Chunk OK now? Making sure. Retries to go: %d                 ", (int)was_bad_retries);
+                DrawString(MAIN_SCREEN, tempstr, pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
+                fvx_lseek(file, offset_back);
+                hash_match = false;
+                was_bad_retries--;
+            }
+            else
+                DrawString(MAIN_SCREEN, "Chunk OK!                                            ", pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
+        }
+    }
+
+    free(buffer);
+
+    if (was_bad && log)
+        *outstr += sprintf(*outstr, "%x\n", offset_back);
+
+    force_refresh = false;
+
+    return !hash_match;
 }
 
 u32 CheckNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, NcchHeader* ncch, ExeFsHeader* exefs) {
@@ -519,6 +617,256 @@ u32 VerifyTmdContent(const char* path, u64 offset, TmdContentChunk* chunk, const
     return memcmp(hash, expected, 32);
 }
 
+u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log) 
+{
+    static bool cryptofix_always = false;
+    bool cryptofix = false;
+    NcchHeader ncch;
+    NcchExtHeader exthdr;
+    ExeFsHeader exefs;
+    FIL file;
+
+    char* dumpstr;
+    char *wstr;
+
+    if (log)
+    {
+        dumpstr = malloc(LOG_FILE_BUF_SIZE);
+
+        if (!dumpstr)
+            return 1;
+
+        wstr = dumpstr;
+
+        wstr += sprintf(wstr, "CORRUPTION FIX LOG ON %s\n", path); 
+    }
+
+    char pathstr[UTF_BUFFER_BYTESIZE(32)];
+    TruncateString(pathstr, path, 32, 8);
+
+    DrawString(MAIN_SCREEN, "File open...", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+
+    // open file, get NCCH, ExeFS header
+    if (fvx_open(&file, path, FA_READ | FA_OPEN_EXISTING) != FR_OK)
+        return 1;
+
+    DrawString(MAIN_SCREEN, "Initial checks...", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);    
+
+    // fetch and check NCCH header
+    fvx_lseek(&file, offset);
+    if (GetNcchHeaders(&ncch, NULL, NULL, &file, cryptofix) != 0) {
+        if (!offset) ShowPrompt(false, "%s\nError: Not a NCCH file", pathstr);
+        fvx_close(&file);
+        return 1;
+    }
+
+    // check NCCH size
+    if (!size) size = fvx_size(&file) - offset;
+    if ((fvx_size(&file) < offset) || (size < ncch.size * NCCH_MEDIA_UNIT)) {
+        if (!offset) ShowPrompt(false, "%s\nError: File is too small", pathstr);
+        fvx_close(&file);
+        return 1;
+    }
+
+    DrawString(MAIN_SCREEN, "Fetching ExeFS Header...", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+
+    // fetch and check ExeFS header
+    fvx_lseek(&file, offset);
+    if (ncch.size_exefs && (GetNcchHeaders(&ncch, NULL, &exefs, &file, cryptofix) != 0)) {
+        bool borkedflags = false;
+        if (ncch.size_exefs && NCCH_ENCRYPTED(&ncch)) 
+        {
+            // disable crypto, try again
+            cryptofix = true;
+            fvx_lseek(&file, offset);
+            if (GetNcchHeaders(&ncch, NULL, &exefs, &file, cryptofix) == 0) 
+                borkedflags = true;
+        }
+    }
+
+    DrawString(MAIN_SCREEN, "Fetching ExtHeader...", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+
+    // fetch and check ExtHeader
+    fvx_lseek(&file, offset);
+    if (ncch.size_exthdr && (GetNcchHeaders(&ncch, &exthdr, NULL, &file, cryptofix) != 0)) {
+        if (!offset) ShowPrompt(false, "%s\nError: Missing ExtHeader", pathstr);
+        fvx_close(&file);
+        return 2;
+    }
+
+    // check / setup crypto
+    if (SetupNcchCrypto(&ncch, NCCH_NOCRYPTO) != 0) {
+        if (!offset) ShowPrompt(false, "%s\nError: Crypto not set up", pathstr);
+        fvx_close(&file);
+        return 2;
+    }
+
+    u32 ver_exthdr = 0;
+    u32 ver_exefs = 0;
+    u32 ver_romfs = 0;
+
+
+    // base hash check for extheader
+    if (ncch.size_exthdr > 0) {
+        fvx_lseek(&file, offset + NCCH_EXTHDR_OFFSET);
+        ver_exthdr = CheckFixNcchHash(ncch.hash_exthdr, &file, 0x400, offset, &ncch, NULL, offset + NCCH_EXTHDR_OFFSET, &wstr, log);
+    }
+
+    // base hash check for exefs
+    if (ncch.size_exefs > 0) {
+        fvx_lseek(&file, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT));
+        ver_exefs = CheckFixNcchHash(ncch.hash_exefs, &file, ncch.size_exefs_hash * NCCH_MEDIA_UNIT, offset, &ncch, &exefs, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT), &wstr, log);
+    }
+
+    // base hash check for romfs
+    if (ncch.size_romfs > 0) {
+        fvx_lseek(&file, offset + (ncch.offset_romfs * NCCH_MEDIA_UNIT));
+        ver_romfs = CheckFixNcchHash(ncch.hash_romfs, &file, ncch.size_romfs_hash * NCCH_MEDIA_UNIT, offset, &ncch, NULL, offset + (ncch.offset_romfs * NCCH_MEDIA_UNIT), &wstr, log);
+    }
+
+    // thorough exefs verification (workaround for Process9)
+    if (!ShowProgress(0, 0, path)) return 1;
+    if ((ncch.size_exefs > 0) && (memcmp(exthdr.name, "Process9", 8) != 0)) {
+        for (u32 i = 0; i < 10; i++) 
+        {
+            DrawString(MAIN_SCREEN, "Verifying EXEFS", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+
+            ExeFsFileHeader* exefile = exefs.files + i;
+            u8* hash = exefs.hashes[9 - i];
+            if (!exefile->size) continue;
+            fvx_lseek(&file, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT) + 0x200 + exefile->offset);
+            ver_exefs = CheckFixNcchHash(hash, &file, exefile->size, offset, &ncch, &exefs, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT) + 0x200 + exefile->offset, &wstr, log);
+        }
+    }
+
+    DrawString(MAIN_SCREEN, "Verifying ROMFS", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+
+    // thorough romfs verification
+    if (!ver_romfs && (ncch.size_romfs > 0)) {
+        UINT btr;
+
+        // load ivfc header
+        RomFsIvfcHeader ivfc;
+        fvx_lseek(&file, offset + (ncch.offset_romfs * NCCH_MEDIA_UNIT));
+        if ((fvx_read(&file, &ivfc, sizeof(RomFsIvfcHeader), &btr) != FR_OK) ||
+            (DecryptNcch((u8*) &ivfc, ncch.offset_romfs * NCCH_MEDIA_UNIT, sizeof(RomFsIvfcHeader), &ncch, NULL) != 0) )
+            ver_romfs = 1;
+
+        // load data
+        u64 lvl1_size = 0;
+        u64 lvl2_size = 0;
+        u8* masterhash = NULL;
+        u8* lvl1_data = NULL;
+        u8* lvl2_data = NULL;
+        if (!ver_romfs && (ValidateRomFsHeader(&ivfc, ncch.size_romfs * NCCH_MEDIA_UNIT) == 0)) {
+            // load masterhash(es)
+            masterhash = malloc(ivfc.size_masterhash);
+            if (masterhash) {
+                u64 offset_add = (ncch.offset_romfs * NCCH_MEDIA_UNIT) + sizeof(RomFsIvfcHeader);
+                fvx_lseek(&file, offset + offset_add);
+                if ((fvx_read(&file, masterhash, ivfc.size_masterhash, &btr) != FR_OK) ||
+                    (DecryptNcch(masterhash, offset_add, ivfc.size_masterhash, &ncch, NULL) != 0))
+                    ver_romfs = 1;
+            }
+
+            // load lvl1
+            lvl1_size = align(ivfc.size_lvl1, 1 << ivfc.log_lvl1);
+            lvl1_data = malloc(lvl1_size);
+            if (lvl1_data) {
+                u64 offset_add = (ncch.offset_romfs * NCCH_MEDIA_UNIT) + GetRomFsLvOffset(&ivfc, 1);
+                fvx_lseek(&file, offset + offset_add);
+                if ((fvx_read(&file, lvl1_data, lvl1_size, &btr) != FR_OK) ||
+                    (DecryptNcch(lvl1_data, offset_add, lvl1_size, &ncch, NULL) != 0))
+                    ver_romfs = 1;
+            }
+
+            // load lvl2
+            lvl2_size = align(ivfc.size_lvl2, 1 << ivfc.log_lvl2);
+            lvl2_data = malloc(lvl2_size);
+            if (lvl2_data) {
+                u64 offset_add = (ncch.offset_romfs * NCCH_MEDIA_UNIT) + GetRomFsLvOffset(&ivfc, 2);
+                fvx_lseek(&file, offset + offset_add);
+                if ((fvx_read(&file, lvl2_data, lvl2_size, &btr) != FR_OK) ||
+                    (DecryptNcch(lvl2_data, offset_add, lvl2_size, &ncch, NULL) != 0))
+                    ver_romfs = 1;
+            }
+
+            // check mallocs
+            if (!masterhash || !lvl1_data || !lvl2_data)
+                ver_romfs = 1; // should never happen
+        }
+
+        // actual verification
+        if (!ver_romfs) {
+            // verify lvl1
+            u32 n_blocks = lvl1_size >> ivfc.log_lvl1;
+            u32 block_log = ivfc.log_lvl1;
+            for (u32 i = 0; !ver_romfs && (i < n_blocks); i++)
+                ver_romfs = (u32) sha_cmp(masterhash + (i*0x20), lvl1_data + (i<<block_log), 1<<block_log, SHA256_MODE);
+
+            // verify lvl2
+            n_blocks = lvl2_size >> ivfc.log_lvl2;
+            block_log = ivfc.log_lvl2;
+            for (u32 i = 0; !ver_romfs && (i < n_blocks); i++) {
+                ver_romfs = sha_cmp(lvl1_data + (i*0x20), lvl2_data + (i<<block_log), 1<<block_log, SHA256_MODE);
+            }
+
+            // lvl3 verification (this will take long)
+            u64 offset_add = (ncch.offset_romfs * NCCH_MEDIA_UNIT) + GetRomFsLvOffset(&ivfc, 3);
+            n_blocks = align(ivfc.size_lvl3, 1 << ivfc.log_lvl3) >> ivfc.log_lvl3;
+            block_log = ivfc.log_lvl3;
+            fvx_lseek(&file, offset + offset_add);
+            for (u32 i = 0; (i < n_blocks); i++) 
+            {
+                DrawString(MAIN_SCREEN, "Running thorough ROMFS refresh.", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+
+                ver_romfs = CheckFixNcchHash(lvl2_data + (i*0x20), &file, 1 << block_log, offset, &ncch, NULL, offset + offset_add, &wstr, log);
+
+                if (ver_romfs)
+                    break;
+
+                offset_add += 1 << block_log;
+                if (!(i % 16) && !ShowProgress(i+1, n_blocks, path)) ver_romfs = 1;
+            }
+        }
+
+        if (masterhash) free(masterhash);
+        if (lvl1_data) free(lvl1_data);
+        if (lvl2_data) free(lvl2_data);
+    }
+    else
+    {
+        fvx_close(&file);
+        if (cryptofix) fvx_qwrite(path, &ncch, offset, sizeof(NcchHeader), NULL);
+        return 2;
+    }
+
+    if (log)
+    {
+        DsTime dstime;
+        get_dstime(&dstime);
+
+
+        while (!InitSDCardFS()) {
+            if (InputWait(1) & BUTTON_POWER) PowerOff();
+            DeinitSDCardFS();
+        }    
+
+        char fileout[64];
+        snprintf(fileout, 64, "%s/fix_report_%02lX%02lX%02lX%02lX%02lX%02lX.txt", OUTPUT_PATH,
+            (u32) dstime.bcd_Y, (u32) dstime.bcd_M, (u32) dstime.bcd_D,
+            (u32) dstime.bcd_h, (u32) dstime.bcd_m, (u32) dstime.bcd_s);
+        FileSetData(fileout, dumpstr, wstr - dumpstr, 0, true);
+
+        free(dumpstr);
+    }
+
+
+    fvx_close(&file);
+    if (cryptofix) fvx_qwrite(path, &ncch, offset, sizeof(NcchHeader), NULL);
+    return ver_exthdr|ver_exefs|ver_romfs;
+}
+
 u32 VerifyNcchFile(const char* path, u32 offset, u32 size) {
     static bool cryptofix_always = false;
     bool cryptofix = false;
@@ -528,7 +876,7 @@ u32 VerifyNcchFile(const char* path, u32 offset, u32 size) {
     FIL file;
 
     char pathstr[UTF_BUFFER_BYTESIZE(32)];
-    TruncateString(pathstr, path, 32, 8);
+    TruncateString(pathstr, path, 33, 8);
 
     // open file, get NCCH, ExeFS header
     if (fvx_open(&file, path, FA_READ | FA_OPEN_EXISTING) != FR_OK)
@@ -723,6 +1071,47 @@ u32 VerifyNcchFile(const char* path, u32 offset, u32 size) {
     return ver_exthdr|ver_exefs|ver_romfs;
 }
 
+
+u32 AttemptFixNcsdFile(const char* path, bool log) 
+{
+    NcsdHeader ncsd;
+
+    // path string
+    char pathstr[UTF_BUFFER_BYTESIZE(32)];
+    TruncateString(pathstr, path, 32, 8);
+
+    // load NCSD header
+    if (LoadNcsdHeader(&ncsd, path) != 0) {
+        ShowPrompt(false, "%s\nError: Not a NCSD file", pathstr);
+        return 1;
+    }
+
+    // validate NCSD contents
+    for (u32 i = 0; i < 8; i++) {
+        NcchPartition* partition = ncsd.partitions + i;
+        u32 offset = partition->offset * NCSD_MEDIA_UNIT;
+        u32 size = partition->size * NCSD_MEDIA_UNIT;
+        if (!size) continue;
+
+        DrawString(MAIN_SCREEN, "Attempting fix, please wait...", 0, 20, COLOR_STD_FONT, COLOR_STD_BG);
+
+        int ret = AttemptFixNcch(path, offset, size, log);
+
+        if (ret == 2)
+        {
+            ShowPrompt(false, "Fix failed. Essential parts of the image are bad.\nTry the following: select this file again,\nhold SELECT and try to copy to gm/out.\nRun this again afterwards.");     
+            return 2;   
+        } 
+        else if (ret != 0)
+        {
+            ShowPrompt(false, "%s\nContent%lu (%08lX@%08lX):\Fixing failed", pathstr, i, size, offset);
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 u32 VerifyNcsdFile(const char* path) {
     NcsdHeader ncsd;
 
@@ -742,6 +1131,7 @@ u32 VerifyNcsdFile(const char* path) {
         u32 offset = partition->offset * NCSD_MEDIA_UNIT;
         u32 size = partition->size * NCSD_MEDIA_UNIT;
         if (!size) continue;
+
         if (VerifyNcchFile(path, offset, size) != 0) {
             ShowPrompt(false, "%s\nContent%lu (%08lX@%08lX):\nVerification failed",
                 pathstr, i, size, offset);

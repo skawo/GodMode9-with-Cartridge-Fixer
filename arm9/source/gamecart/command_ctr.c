@@ -5,8 +5,13 @@
 #include "command_ctr.h"
 
 #include "protocol_ctr.h"
+#include "ui.h"
 
 static int read_count = 0;
+
+static int refresh_count = 0;
+int refresh_call_every = 10000;
+bool force_refresh = false;
 
 static void CTR_CmdC5()
 {
@@ -16,10 +21,16 @@ static void CTR_CmdC5()
 
 void CTR_CmdReadData(u32 sector, u32 length, u32 blocks, void* buffer)
 {
-    if(read_count++ > 10000)
+    if(read_count++ >= refresh_call_every || force_refresh)
     {
         CTR_CmdC5();
         read_count = 0;
+        refresh_count++;
+
+        char tempstr[64];
+        snprintf(tempstr, 64, "%d", refresh_count);
+        DrawString(MAIN_SCREEN, "Refresh count:", 0, 0, COLOR_STD_FONT, COLOR_STD_BG);
+        DrawString(MAIN_SCREEN, tempstr, 0, 10, COLOR_STD_FONT, COLOR_STD_BG);
     }
 
     const u32 read_cmd[4] = {
