@@ -1,17 +1,17 @@
 <h1>Nintendo 3DS Cartridge Fixer</h1>
 
-<h2>Warning: This is EXPERIMENTAL software. Only run this on non-working cartridges.<br>There is NO guarantee this will fix your cartridge, and it might, in fact, make it worse.</h2>
+<h2>Warning: This is EXPERIMENTAL software. Only run this on non-working cartridges. There is NO guarantee this will fix your cartridge, and it might, in fact, make it worse.
 
 3DS cartridges contain a NAND flash chip, which, if unused for long periods of time, may become corrupted. Thankfully, the controller chip has an error correction function which can restore the corrupted data. 
 
 During normal 3DS operation, this function is only run every 10000 reads, every time a cart is inserted and every time the system is powering down.
 
-This fork of GodMode 9 has been edited to make a more extensive use of this functionality; the program can now scan the cartridge for errors, and if they're found, will run the refresh function on that chunk of data until it corrects itself.
+This fork of GodMode 9 has been edited to make a more extensive use of this functionality; the program can now scan the cartridge for errors, and if they're found, will run the refresh function on that chunk of data until it corrects itself. If your cartridge appears to load infinitely, or frequently crashes from non-gameplay related reasons, this tool can likely fix it.
 
 <b>To make use of this function:</b><br>
 
 1. Run the program and insert a cartridge. 
-2. Choose "GAMECART". A list of files will pop up. If it doesn't, try to reinsert the cartridge.
+2. Choose "GAMECART". A list of files will pop up. If it doesn't, try reinserting the cartridge.
 3. Choose the file with the .3ds extension (but NOT .trim.3ds, just .3ds).
 4. Choose "NCSD image options..."
 5. Choose "Fix cartridge corruption".
