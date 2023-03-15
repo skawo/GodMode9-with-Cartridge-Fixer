@@ -16,7 +16,7 @@ This fork of GodMode 9 has been edited to make a more extensive use of this func
 4. Choose "NCSD image options..."
 5. Choose "Fix cartridge corruption".
 
-You can hold Y when selecting this option to enable logging. Logs are saved to /gm9/out<br>
+You can hold Y when selecting this option to enable logging. Logs are saved to `/gm9/out`.<br>
 You can hold SELECT when selecting this option to make refresh run on EVERY read (Not typically recommended).
 
 <b>Credits:</b><br>
