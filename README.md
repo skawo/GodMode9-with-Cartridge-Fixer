@@ -19,6 +19,8 @@ This fork of GodMode 9 has been edited to make more extensive use of this functi
 You can hold Y when selecting this option to enable logging. Logs are saved to `/gm9/out`.<br>
 You can hold SELECT when selecting this option to make refresh run on EVERY read (not typically recommended).
 
+The time it takes to restore a cartridge depends on how corrupted it is. As long as the "Current hash" value is changing, the program is doing its thing. If "Current hash" stops updating, the refresh function has stopped working and the cartridge cannot be saved.
+
 <b>Credits:</b><br>
 Skawo - Programming<br>
 RoadrunnerWMC - Help<br>
