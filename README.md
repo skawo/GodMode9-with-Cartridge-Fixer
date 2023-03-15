@@ -6,13 +6,13 @@
 
 During normal 3DS operation, this function is only run every 10000 reads, every time a cart is inserted and every time the system is powering down.
 
-This fork of Godmode 9 has been edited to make a more extensive use of this functionality; the program can now scan the cartridge for errors, and if they're found, will run the refresh function on that chunk of data until it corrects itself.
+This fork of GodMode 9 has been edited to make a more extensive use of this functionality; the program can now scan the cartridge for errors, and if they're found, will run the refresh function on that chunk of data until it corrects itself.
 
 <b>To make use of this function:</b><br>
 
 1. Run the program and insert a cartridge. 
 2. Choose "GAMECART". A list of files will pop up. If it doesn't, try to reinsert the cartridge.
-3. Choose the file with the .3ds extension (but NOT .trim.3ds, just .3ds)
+3. Choose the file with the .3ds extension (but NOT .trim.3ds, just .3ds).
 4. Choose "NCSD image options..."
 5. Choose "Fix cartridge corruption".
 
