@@ -6,7 +6,7 @@
 
 During normal 3DS operation, this function is only run every 10000 reads, every time a cart is inserted and every time the system is powering down.
 
-This fork of GodMode 9 has been edited to make more extensive use of this functionality; the program can now scan the cartridge for errors, and if they're found, will run the refresh function on that chunk of data until it corrects itself. If your cartridge appears to load infinitely, or frequently crashes from non-gameplay-related reasons, this tool can likely fix it.
+This fork of GodMode 9 has been edited to make more extensive use of this functionality; the program can now scan the cartridge for errors, and if they're found, will run the refresh function on that chunk of data until it corrects itself. If your cartridge appears to load infinitely, or frequently crashes from non-gameplay-related reasons, this tool has a chance to fix it.
 
 <b>To make use of this function:</b><br>
 
