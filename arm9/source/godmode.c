@@ -1579,6 +1579,61 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
 
         return 0;
     }
+    else if (user_select == decrypt) { // -> decrypt game file
+        if (cryptable_inplace) {
+            optionstr[0] = "Decrypt to " OUTPUT_PATH;
+            optionstr[1] = "Decrypt inplace";
+            user_select = (int) ((n_marked > 1) ?
+                ShowSelectPrompt(2, optionstr, "%s\n(%lu files selected)", pathstr, n_marked) :
+                ShowSelectPrompt(2, optionstr, "%s%s", pathstr, tidstr));
+        } else user_select = 1;
+        bool inplace = (user_select == 2);
+        if (!user_select) { // do nothing when no choice is made
+        } else if ((n_marked > 1) && ShowPrompt(true, "Try to decrypt all %lu selected files?", n_marked)) {
+            u32 n_success = 0;
+            u32 n_unencrypted = 0;
+            u32 n_other = 0;
+            ShowString("Trying to decrypt %lu files...", n_marked);
+            for (u32 i = 0; i < current_dir->n_entries; i++) {
+                const char* path = current_dir->entry[i].path;
+                if (!current_dir->entry[i].marked)
+                    continue;
+                if (!(IdentifyFileType(path) & filetype & TYPE_BASE)) {
+                    n_other++;
+                    continue;
+                }
+                if (!(filetype & BIN_KEYDB) && (CheckEncryptedGameFile(path) != 0)) {
+                    n_unencrypted++;
+                    continue;
+                }
+                DrawDirContents(current_dir, (*cursor = i), scroll);
+                if (!(filetype & BIN_KEYDB) && (CryptGameFile(path, inplace, false) == 0)) n_success++;
+                else if ((filetype & BIN_KEYDB) && (CryptAesKeyDb(path, inplace, false) == 0)) n_success++;
+                else { // on failure: show error, continue
+                    char lpathstr[UTF_BUFFER_BYTESIZE(32)];
+                    TruncateString(lpathstr, path, 32, 8);
+                    if (ShowPrompt(true, "%s\nDecryption failed\n \nContinue?", lpathstr)) continue;
+                    else break;
+                }
+                current_dir->entry[i].marked = false;
+            }
+            if (n_other || n_unencrypted) {
+                ShowPrompt(false, "%lu/%lu files decrypted ok\n%lu/%lu not encrypted\n%lu/%lu not of same type",
+                    n_success, n_marked, n_unencrypted, n_marked, n_other, n_marked);
+            } else ShowPrompt(false, "%lu/%lu files decrypted ok", n_success, n_marked);
+            if (!inplace && n_success) ShowPrompt(false, "%lu files written to %s", n_success, OUTPUT_PATH);
+        } else {
+            if (!(filetype & BIN_KEYDB) && (CheckEncryptedGameFile(file_path) != 0)) {
+                ShowPrompt(false, "%s\nFile is not encrypted", pathstr);
+            } else {
+                u32 ret = (filetype & BIN_KEYDB) ? CryptAesKeyDb(file_path, inplace, false) :
+                    CryptGameFile(file_path, inplace, false);
+                if (inplace || (ret != 0)) ShowPrompt(false, "%s\nDecryption %s", pathstr, (ret == 0) ? "success" : "failed");
+                else ShowPrompt(false, "%s\nDecrypted to %s", pathstr, OUTPUT_PATH);
+            }
+        }
+        return 0;
+    }
     else if (user_select == encrypt) { // -> encrypt game file
         if (cryptable_inplace) {
             optionstr[0] = "Encrypt to " OUTPUT_PATH;
