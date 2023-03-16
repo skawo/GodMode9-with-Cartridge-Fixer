@@ -99,7 +99,9 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
 	u32 pos_y = (SCREEN_HEIGHT / 2) - 12 - 2 - 10;
 
     bool was_bad = false;
+    bool hash_stuck = false;
     int was_bad_retries = 0;
+    int hash_stuck_times = 0;
 
     while (!hash_match)
     {
@@ -112,7 +114,7 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
 
         sha_init(SHA256_MODE);
 
-        u32 buffersize = hash_match ? 0x100 : force_refresh ? 0x200 : STD_BUFFER_SIZE;
+        u32 buffersize = hash_stuck ? 0x80 : force_refresh ? 0x200 : STD_BUFFER_SIZE;
 
         for (u32 i = 0; i < size_data; i += buffersize) 
         {
@@ -142,18 +144,37 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
         if (r == 0)
             hash_match = 0;
 
+        if (hash_stuck)
+            hash_match = 0;
+
         #endif
+
+
 
         if (!hash_match)
         {
             if (!memcmp(hash, lasthash, 32))
             {
-                DrawString(MAIN_SCREEN, "Hash wrong and stuck? Trying smaller read buffer...      ", pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
+                hash_stuck_times++;
+                snprintf(tempstr, 64, "Hash stuck. Retries: %d/20                                      ", (int)hash_stuck_times);
+                DrawString(MAIN_SCREEN, tempstr, pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
                 hash_stuck = true;
+
+                if (hash_stuck_times >= 20)
+                {
+                    free(buffer);
+
+                    if (log)
+                        *outstr += sprintf(*outstr, "Unfixable: %x\n", offset_back);
+
+                    force_refresh = false;
+
+                    return 0;
+                }
             }
             else
             {
-                DrawString(MAIN_SCREEN, "HASH MISMATCH. Attempting refresh.                       ", pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
+                DrawString(MAIN_SCREEN, "HASH MISMATCH. Attempting refresh.                             ", pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
                 hash_stuck = false;
             }
             
@@ -166,14 +187,14 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
         {
             if (was_bad_retries)
             {
-                snprintf(tempstr, 64, "Chunk OK now? Making sure. Retries to go: %d                 ", (int)was_bad_retries);
+                snprintf(tempstr, 64, "Chunk OK now? Making sure. Retries to go: %d                    ", (int)was_bad_retries);
                 DrawString(MAIN_SCREEN, tempstr, pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
                 fvx_lseek(file, offset_back);
                 hash_match = false;
                 was_bad_retries--;
             }
             else
-                DrawString(MAIN_SCREEN, "Chunk OK!                                            ", pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
+                DrawString(MAIN_SCREEN, "Chunk OK!                                                    ", pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
         }
 
         strncpy(lasthash, hash, 32);
