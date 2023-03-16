@@ -100,8 +100,10 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
 
     bool was_bad = false;
     bool hash_stuck = false;
+    bool hash_was_stuck = false;
     int was_bad_retries = 0;
     int hash_stuck_times = 0;
+    int hash_bad_retries = 0;
 
     while (!hash_match)
     {
@@ -114,7 +116,7 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
 
         sha_init(SHA256_MODE);
 
-        u32 buffersize = hash_stuck ? 0x80 : force_refresh ? 0x200 : STD_BUFFER_SIZE;
+        u32 buffersize = hash_stuck ? 0x200 : force_refresh ? 0x800 : STD_BUFFER_SIZE;
 
         for (u32 i = 0; i < size_data; i += buffersize) 
         {
@@ -144,21 +146,36 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
         if (r == 0)
             hash_match = 0;
 
-        if (hash_stuck)
-            hash_match = 0;
 
-        #endif
+        hash_match = 0;
 
+        #endif    
 
 
         if (!hash_match)
         {
+            hash_bad_retries++;
+
+            if (hash_bad_retries > 500)
+            {
+                if (CheckButton(BUTTON_Y))
+                {
+                    if (log)
+                        *outstr += sprintf(*outstr, "Skipped: %x\n", offset_back);
+
+                    free(buffer);
+                    force_refresh = false;
+                    return 0;
+                }
+            }
+            
             if (!memcmp(hash, lasthash, 32))
             {
                 hash_stuck_times++;
                 snprintf(tempstr, 64, "Hash stuck. Retries: %d/20                                      ", (int)hash_stuck_times);
                 DrawString(MAIN_SCREEN, tempstr, pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
                 hash_stuck = true;
+                hash_was_stuck = true;
 
                 if (hash_stuck_times >= 20)
                 {
@@ -197,7 +214,19 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
                 DrawString(MAIN_SCREEN, "Chunk OK!                                                    ", pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
         }
 
-        strncpy(lasthash, hash, 32);
+        if (hash_was_stuck)
+            DrawString(MAIN_SCREEN, "*", pos_x - 15, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
+        else
+            DrawString(MAIN_SCREEN, " ", pos_x - 15, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
+
+        if (hash_bad_retries > 500)
+        {
+            DrawString(MAIN_SCREEN, "500 Retries exceeded. Press Y to skip this block.", pos_x, pos_y + 124, COLOR_STD_FONT, COLOR_STD_BG);
+        }
+        else
+            DrawString(MAIN_SCREEN, "                                                 ", pos_x, pos_y + 124, COLOR_STD_FONT, COLOR_STD_BG); 
+
+        memcpy(lasthash, hash, 32);
     }
 
     free(buffer);
