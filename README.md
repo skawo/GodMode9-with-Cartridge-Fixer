@@ -1,3 +1,33 @@
+<h1>Nintendo 3DS Cartridge Fixer</h1>
+
+<h2>Warning: This is EXPERIMENTAL software. Only run this on non-working cartridges. There is NO guarantee this will fix your cartridge, and it might, in fact, make it worse.</h2>
+
+3DS cartridges contain a NAND flash chip, which, if unused for long periods of time, may become corrupted. Thankfully, the controller chip has an error correction function which can restore the corrupted data. 
+
+During normal 3DS operation, this function is only run every 10000 reads, every time a cart is inserted and every time the system is powering down.
+
+This fork of GodMode 9 has been edited to make more extensive use of this functionality; the program can now scan the cartridge for errors, and if they're found, will run the refresh function on that chunk of data until it corrects itself. If your cartridge appears to load infinitely, or frequently crashes from non-gameplay-related reasons, this tool has a chance to fix it.
+
+<b>To make use of this function:</b><br>
+
+1. Run the program and insert a cartridge. 
+2. Choose "GAMECART". A list of files will pop up. If it doesn't, try reinserting the cartridge.
+3. Choose the file with the .3ds extension (but NOT .trim.3ds, just .3ds).
+4. Choose "NCSD image options..."
+5. Choose "Fix cartridge corruption".
+
+You can hold Y when selecting this option to enable logging. Logs are saved to `/gm9/out`.<br>
+You can hold SELECT when selecting this option to make refresh run on EVERY read (not typically recommended).
+
+The time it takes to restore a cartridge depends on how corrupted it is. As long as the "Current hash" value is changing, the program is doing its thing. If "Current hash" stops updating, the refresh function has stopped working and you should cancel the operation. Try to use the SELECT mode. If that still doesn't work, hold SELECT and use the "`Copy to gm9/out/`" option, then contact me on my <a href="discord.gg/d9gNnBHvBb">Discord</a>.
+
+<b>Credits:</b><br>
+Skawo - Programming<br>
+RoadrunnerWMC - Help<br>
+Pleasehelpme2 - Testing<br>
+BreadLoaf - Testing<br>
+
+<br><br><br><br><br><br><br><br>Original readme follows below.<br><br><br><br><br><br><br><br>
 # ![GodMode9](https://github.com/d0k3/GodMode9/blob/master/resources/logo.png)
 _A full access file browser for the 3DS console_ :godmode:
 

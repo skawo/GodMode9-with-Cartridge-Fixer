@@ -1117,7 +1117,7 @@ u32 AttemptFixNcsdFile(const char* path, bool log)
         } 
         else if (ret != 0)
         {
-            ShowPrompt(false, "%s\nContent%lu (%08lX@%08lX):\Fixing failed", pathstr, i, size, offset);
+            ShowPrompt(false, "%s\nContent%lu (%08lX@%08lX): Fixing failed", pathstr, i, size, offset);
             return 1;
         }
     }
