@@ -193,6 +193,7 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
             {
                 DrawString(MAIN_SCREEN, "HASH MISMATCH. Attempting refresh.                             ", pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
                 hash_stuck = false;
+                hash_stuck_times = 0;
             }
             
             fvx_lseek(file, offset_back);

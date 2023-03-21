@@ -1328,7 +1328,7 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
         ShaCalculator(file_path, true);
         GetDirContents(current_dir, current_path);
 
-            refresh_call_every = 10000;
+        refresh_call_every = 10000;
         return 0;
     }
     else if (user_select == calccmac) { // -> calculate CMAC
