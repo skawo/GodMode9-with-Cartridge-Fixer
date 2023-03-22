@@ -116,7 +116,7 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
 
         sha_init(SHA256_MODE);
 
-        u32 buffersize = hash_stuck ? 0x100 : force_refresh ? 0x200 : STD_BUFFER_SIZE;
+        u32 buffersize = hash_stuck ? 0x200 : force_refresh ? 0x1000 : STD_BUFFER_SIZE;
 
         for (u32 i = 0; i < size_data; i += buffersize) 
         {
