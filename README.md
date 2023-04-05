@@ -10,7 +10,7 @@ This fork of GodMode 9 has been edited to make more extensive use of this functi
 
 <b>To make use of this function:</b><br>
 
-1. Run the program (Place it in `luma/payloads/`) and insert a cartridge. 
+1. Run the program (Install the Luma CFW, put the compiled .firm file from the Releases section in `luma/payloads/`, start the 3DS holding START) and insert a cartridge. 
 2. Choose "GAMECART". A list of files will pop up. If it doesn't, try reinserting the cartridge.
 3. Choose the file with the .3ds extension (but NOT .trim.3ds, just .3ds).
 4. Choose "NCSD image options..."
