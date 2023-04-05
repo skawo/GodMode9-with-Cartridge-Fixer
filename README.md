@@ -1,6 +1,6 @@
 <h1>Nintendo 3DS Cartridge Fixer</h1>
 
-<h2>Warning: This is EXPERIMENTAL software. Only run this on non-working cartridges. There might not fix your cartridge, and while it shouldn't make them worse, there are no guarantees.</h2>
+<h2>Warning: This is EXPERIMENTAL software. Only run this on non-working cartridges. This might not fix your cartridge, and while it shouldn't make them worse, there are no guarantees.</h2>
 
 3DS cartridges contain a NAND flash chip, which, if unused for long periods of time, may become corrupted. Thankfully, the controller chip has an error correction function which can restore the corrupted data. 
 
