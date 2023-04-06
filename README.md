@@ -21,7 +21,7 @@ You can hold SELECT when selecting this option to make refresh run on EVERY read
 
 The time it takes to restore a cartridge depends on how corrupted it is. As long as the "Current hash" value is changing, the program is doing its thing. If "Current hash" stops updating, the refresh function has stopped working and that block will be skipped after 20 tries without change. You can try to use the SELECT mode to see if it helps that block recover. There is a possibility that a block will never fix itself despite 'current hash' continuing to update - after 500 retries, an option to skip fixing the current chunk (by pressing Y) is provided. That being said, it can take much more than 500 retries to fix a chunk, so only skip the chunk if you're sure it's stuck.
 
-You might have to run this process a couple times for the fixes to really stick.
+You may have to run this process a couple times for the fixes to really stick. You can run the "Verify" command from the same "NCSD image options..." menu to make sure everything has been fixed.
 
 <b>Credits:</b><br>
 Skawo - Programming<br>
