@@ -1573,7 +1573,7 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
                 return 0;
         }
 
-        ShowPrompt(false, "Corruption fix %s. Run verify.", (AttemptFixNcsdFile(file_path, log) == 0) ? "succeeded" : "failed");
+        ShowPrompt(false, "Corruption fixer %s. Run verify.", (AttemptFixNcsdFile(file_path, log) == 0) ? "finished" : "failed");
 
         refresh_call_every = 10000;
 
