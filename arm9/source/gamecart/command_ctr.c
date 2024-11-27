@@ -13,6 +13,8 @@ static int refresh_count = 0;
 int refresh_call_every = 10000;
 bool force_refresh = false;
 
+#define HundredRefreshes
+
 static void CTR_CmdC5()
 {
     static const u32 c5_cmd[4] = { 0xC5000000, 0x00000000, 0x00000000, 0x00000000 };
@@ -23,22 +25,35 @@ void CTR_CmdReadData(u32 sector, u32 length, u32 blocks, void* buffer)
 {
     if(read_count++ >= refresh_call_every || force_refresh)
     {
-        CTR_CmdC5();
+        
+    #ifdef HundredRefreshes
+        for (int i = 0; i < 100; i++)
+        {
+            refresh_count += 99;
+    #endif        
+            refresh_count++;
+            CTR_CmdC5();
+    #ifdef HundredRefreshes
+        }
+    #endif         
+
         read_count = 0;
-        refresh_count++;
 
         char tempstr[64];
         snprintf(tempstr, 64, "%d", refresh_count);
         DrawString(MAIN_SCREEN, "Refresh count:", 0, 0, COLOR_STD_FONT, COLOR_STD_BG);
         DrawString(MAIN_SCREEN, tempstr, 0, 10, COLOR_STD_FONT, COLOR_STD_BG);
     }
-
+   
     const u32 read_cmd[4] = {
         (0xBF000000 | (u32)(sector >> 23)),
         (u32)((sector << 9) & 0xFFFFFFFF),
         0x00000000, 0x00000000
     };
-    CTR_SendCommand(read_cmd, length, blocks, 0x704822C, buffer);
+    CTR_SendCommand(read_cmd, length, blocks, 0x104822C, buffer);
+    
+   
+    
 }
 
 void CTR_CmdReadHeader(void* buffer)
