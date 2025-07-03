@@ -13,7 +13,7 @@ static int refresh_count = 0;
 int refresh_call_every = 10000;
 bool force_refresh = false;
 
-#define HundredRefreshes
+//#define HundredRefreshes
 
 static void CTR_CmdC5()
 {

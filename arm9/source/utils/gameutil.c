@@ -82,7 +82,7 @@ u32 GetNcchHeaders(NcchHeader* ncch, NcchExtHeader* exthdr, ExeFsHeader* exefs, 
     return 0;
 }
 
-u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, NcchHeader* ncch, ExeFsHeader* exefs, u32 offset_back, char** outstr, bool log) 
+u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, NcchHeader* ncch, ExeFsHeader* exefs, u32 offset_back, char** outstr, bool log, bool autoskip) 
 {
     u32 offset_data = fvx_tell(file) - offset_ncch;
     u8 hash[32];
@@ -158,7 +158,7 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
 
             if (hash_bad_retries > 500)
             {
-                if (CheckButton(BUTTON_Y))
+                if (CheckButton(BUTTON_Y) || autoskip)
                 {
                     if (log)
                         *outstr += sprintf(*outstr, "Skipped: %x\n", offset_back);
@@ -681,7 +681,7 @@ u32 VerifyTmdContent(const char* path, u64 offset, TmdContentChunk* chunk, const
     return memcmp(hash, expected, 32);
 }
 
-u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log) 
+u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autoskip) 
 {
     static bool cryptofix_always = false;
     bool cryptofix = false;
@@ -773,19 +773,19 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log)
     // base hash check for extheader
     if (ncch.size_exthdr > 0) {
         fvx_lseek(&file, offset + NCCH_EXTHDR_OFFSET);
-        ver_exthdr = CheckFixNcchHash(ncch.hash_exthdr, &file, 0x400, offset, &ncch, NULL, offset + NCCH_EXTHDR_OFFSET, &wstr, log);
+        ver_exthdr = CheckFixNcchHash(ncch.hash_exthdr, &file, 0x400, offset, &ncch, NULL, offset + NCCH_EXTHDR_OFFSET, &wstr, log, autoskip);
     }
 
     // base hash check for exefs
     if (ncch.size_exefs > 0) {
         fvx_lseek(&file, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT));
-        ver_exefs = CheckFixNcchHash(ncch.hash_exefs, &file, ncch.size_exefs_hash * NCCH_MEDIA_UNIT, offset, &ncch, &exefs, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT), &wstr, log);
+        ver_exefs = CheckFixNcchHash(ncch.hash_exefs, &file, ncch.size_exefs_hash * NCCH_MEDIA_UNIT, offset, &ncch, &exefs, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT), &wstr, log, autoskip);
     }
 
     // base hash check for romfs
     if (ncch.size_romfs > 0) {
         fvx_lseek(&file, offset + (ncch.offset_romfs * NCCH_MEDIA_UNIT));
-        ver_romfs = CheckFixNcchHash(ncch.hash_romfs, &file, ncch.size_romfs_hash * NCCH_MEDIA_UNIT, offset, &ncch, NULL, offset + (ncch.offset_romfs * NCCH_MEDIA_UNIT), &wstr, log);
+        ver_romfs = CheckFixNcchHash(ncch.hash_romfs, &file, ncch.size_romfs_hash * NCCH_MEDIA_UNIT, offset, &ncch, NULL, offset + (ncch.offset_romfs * NCCH_MEDIA_UNIT), &wstr, log, autoskip);
     }
 
     // thorough exefs verification (workaround for Process9)
@@ -799,7 +799,7 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log)
             u8* hash = exefs.hashes[9 - i];
             if (!exefile->size) continue;
             fvx_lseek(&file, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT) + 0x200 + exefile->offset);
-            ver_exefs = CheckFixNcchHash(hash, &file, exefile->size, offset, &ncch, &exefs, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT) + 0x200 + exefile->offset, &wstr, log);
+            ver_exefs = CheckFixNcchHash(hash, &file, exefile->size, offset, &ncch, &exefs, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT) + 0x200 + exefile->offset, &wstr, log, autoskip);
         }
     }
 
@@ -884,7 +884,7 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log)
             {
                 DrawString(MAIN_SCREEN, "Running thorough ROMFS refresh.", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
 
-                ver_romfs = CheckFixNcchHash(lvl2_data + (i*0x20), &file, 1 << block_log, offset, &ncch, NULL, offset + offset_add, &wstr, log);
+                ver_romfs = CheckFixNcchHash(lvl2_data + (i*0x20), &file, 1 << block_log, offset, &ncch, NULL, offset + offset_add, &wstr, log, autoskip);
 
                 if (ver_romfs)
                     break;
@@ -1136,7 +1136,7 @@ u32 VerifyNcchFile(const char* path, u32 offset, u32 size) {
 }
 
 
-u32 AttemptFixNcsdFile(const char* path, bool log) 
+u32 AttemptFixNcsdFile(const char* path, bool log, bool autoskip) 
 {
     NcsdHeader ncsd;
 
@@ -1159,7 +1159,7 @@ u32 AttemptFixNcsdFile(const char* path, bool log)
 
         DrawString(MAIN_SCREEN, "Attempting fix, please wait...", 0, 20, COLOR_STD_FONT, COLOR_STD_BG);
 
-        int ret = AttemptFixNcch(path, offset, size, log);
+        int ret = AttemptFixNcch(path, offset, size, log, autoskip);
 
         if (ret == 2)
         {

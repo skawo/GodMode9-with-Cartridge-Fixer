@@ -1558,12 +1558,19 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
         }
 
         bool log = false;
+        bool autoskip = false;
 
         if (CheckButton(BUTTON_Y))
         {
             ShowPrompt(false, "Logging has been turned on.");
             log = true; 
         }
+        
+        if (CheckButton(BUTTON_X))
+        {
+            ShowPrompt(false, "Autoskip is on.");
+            autoskip = true; 
+        }        
                 
         if (CheckButton(BUTTON_SELECT))
         {
@@ -1573,7 +1580,7 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
                 return 0;
         }
 
-        ShowPrompt(false, "Corruption fixer %s. Run verify.", (AttemptFixNcsdFile(file_path, log) == 0) ? "finished" : "failed");
+        ShowPrompt(false, "Corruption fix run %s", (AttemptFixNcsdFile(file_path, log, autoskip) == 0) ? "finished. Run verify." : "failed.");
 
         refresh_call_every = 10000;
 
