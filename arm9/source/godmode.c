@@ -155,7 +155,7 @@ u32 SplashInit(const char* modestr) {
         "--------------------------------", "https://github.com/d0k3/GodMode9",
         "Releases:", "https://github.com/d0k3/GodMode9/releases/", // this won't fit with a 8px width font
         "Hourlies:", "https://d0k3.secretalgorithm.com/");
-    DrawStringF(TOP_SCREEN, 0, 0, COLOR_STD_FONT, COLOR_STD_BG, "Cartridge Fixer Fork v1.3 by Skawo. \nThanks to Pleasehelpme2 and BreadLoaf for testing.");
+    DrawStringF(TOP_SCREEN, 0, 0, COLOR_STD_FONT, COLOR_STD_BG, "Cartridge Fixer Fork v1.4 by Skawo. \nThanks to Pleasehelpme2 and BreadLoaf for testing.");
     DrawStringF(BOT_SCREEN, pos_xu, pos_yu, COLOR_STD_FONT, COLOR_STD_BG, "%s", loadstr);
     DrawStringF(BOT_SCREEN, pos_xb, pos_yu, COLOR_STD_FONT, COLOR_STD_BG, "built: " DBUILTL);
 
@@ -1627,10 +1627,15 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
         }
 
         bool log = false;
+        bool autoskip = false;
 
         if (CheckButton(BUTTON_Y)) {
             ShowPrompt(false, "Logging has been turned on.");
             log = true;
+        }
+        if (CheckButton(BUTTON_X)) {
+            ShowPrompt(false, "Autoskip is on.");
+            autoskip = true;
         }
 
         if (CheckButton(BUTTON_SELECT)) {
@@ -1640,7 +1645,7 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
                 return 0;
         }
 
-        ShowPrompt(false, "Corruption fix %s. Run verify.", (AttemptFixNcsdFile(file_path, log) == 0) ? "succeeded" : "failed");
+        ShowPrompt(false, "Corruption fix %s. Run verify.", (AttemptFixNcsdFile(file_path, log, autoskip) == 0) ? "succeeded" : "failed");
 
         refresh_call_every = 10000;
 
