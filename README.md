@@ -14,12 +14,15 @@ This fork of GodMode 9 has been edited to make more extensive use of this functi
 2. Choose "GAMECART". A list of files will pop up. If it doesn't, try reinserting the cartridge.
 3. Choose the file with the .3ds extension (but NOT .trim.3ds, just .3ds).
 4. Choose "NCSD image options..."
-5. Choose "Fix cartridge corruption".
-6. After the fixer finishes, go into "NCSD image options" again and choose "Verify".
+5. Choose "Verify" to see whether the cartridge is really corrupted in this manner, or if the issue stems from somewhere else.
+6. If the Verify fails, go into "NCSD image options" and choose "Fix cartridge corruption".
+7. After the fixer finishes, go into "NCSD image options" again and choose "Verify".
 
 If the verification fails, try running the fixer process again. It may take several run-throughs before the whole cart is stabilized. To verify that the cart is getting better with each-run through, hold Y while selecting the "Fix cartridge corruption" option. This will make the console output a log of bad blocks to the SD card (to the `/gm9/out` folder). If that list keeps getting shorter with each run-through, great! Keep going. if the number of entries doesn't decrease after a 2-3 attempts, then those blocks are probably not going to get better with repeated runs. As last resort, you can hold also try holding SELECT when selecting the fixer to make refresh run on EVERY read (not recommended unless the cartridge is almost definitely a lost cause).
 
 The time it takes to restore a cartridge depends on how corrupted it is. As long as the "Current hash" value is changing, the program is doing its thing. If "Current hash" stops updating, the refresh function has stopped working and that block will be skipped after 20 tries without change. You can try to use the SELECT mode to see if it helps that block recover. There is a possibility that a block will never fix itself despite 'current hash' continuing to update - after 500 retries, an option to skip fixing the current chunk (by pressing Y) is provided. That being said, it can take much more than 500 retries to fix a chunk, so only skip the chunk if you're sure it's stuck.
+
+If you're looking for a way to confirm your cartridges are working fine, GodMode9 (and as an extension, this tool as well) has a verify function which checks all the files - a more thorough check than just trying the cartridge out regularly. A cartridge might start but still have some random files corrupted. Running the verify function periodically (every year or so) could extend the cartridge's longevity, as well. 
 
 <b>Credits:</b><br>
 Skawo - Programming<br>
