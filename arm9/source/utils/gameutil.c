@@ -89,6 +89,9 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
     u8 lasthash[32];
     char tempstr[64];
     char hash_str[32+1];
+    
+    memset(lasthash, 0, 32);
+    bool first_hash = true;
 
     u8* buffer = (u8*) malloc(STD_BUFFER_SIZE);
     if (!buffer) return 1;
@@ -169,7 +172,7 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
                 }
             }
             
-            if (!memcmp(hash, lasthash, 32))
+            if (!first_hash && !memcmp(hash, lasthash, 32)) 
             {
                 hash_stuck_times++;
                 snprintf(tempstr, 64, "Hash stuck. Retries: %d/20                                      ", (int)hash_stuck_times);
@@ -203,6 +206,8 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
         }
         else
         {
+            hash_bad_retries = 0;
+            
             if (was_bad_retries)
             {
                 snprintf(tempstr, 64, "Chunk OK now? Making sure. Retries to go: %d                    ", (int)was_bad_retries);
@@ -228,6 +233,7 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
             DrawString(MAIN_SCREEN, "                                                 ", pos_x, pos_y + 124, COLOR_STD_FONT, COLOR_STD_BG); 
 
         memcpy(lasthash, hash, 32);
+        first_hash = false;
     }
 
     free(buffer);
