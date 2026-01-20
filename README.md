@@ -14,7 +14,7 @@ This fork of GodMode 9 has been edited to make more extensive use of this functi
 2. Choose "GAMECART". A list of files will pop up. If it doesn't, try reinserting the cartridge.
 3. Choose the file with the .3ds extension (but NOT .trim.3ds, just .3ds).
 4. Choose "NCSD image options..."
-5. Choose "Verify" to see whether the cartridge is really corrupted in this manner, or if the issue stems from somewhere else.
+5. Choose "Verify" to see whether the cartridge is really corrupted in this manner, or if the issue stems from something else.
 6. If the Verify fails, go into "NCSD image options" and choose "Fix cartridge corruption".
 7. After the fixer finishes, go into "NCSD image options" again and choose "Verify".
 
