@@ -16,7 +16,7 @@ This fork of GodMode 9 has been edited to make more extensive use of this functi
 6. If the Verify fails, go into "NCSD image options" and choose "Fix cartridge corruption".
 7. After the fixer finishes, go into "NCSD image options" again and choose "Verify".
 
-<b>This will take a while. As in, it can take more than a day for heavily corrupted carts. You can close the 3DS while this is happening - the process will continue.</b><br>​
+<b>This will take a while. As in, it can take more than a day for heavily corrupted carts. You can close the 3DS while this is happening.</b><br>​
 
 If the verification fails, try running the fixer process again. It may take several run-throughs before the whole cart is stabilized. 
 
