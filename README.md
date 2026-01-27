@@ -1,4 +1,16 @@
+# GodMode9 with Cartridge-Fixer
+
+This is a fork of [skawo's fork](https://github.com/skawo/GodMode9-with-Cartridge-Fixer) rebased to the most recent version of GodMode9. All credit to them. Refer to their fork's README for usage details and warnings.
+
+I needed it to run with a recent version of GodMode9. Rebasing was not trivial due to unrelated whitespace changes among other things.
+To make future rebases easier, this fork contains a cleaned up commit history which only adds/modifies what's absolutely necessary.
+
+A single pass over an incredibly bad Pokemon Alpha Sapphire cartridge took ~7 days. I wasn't able to play it, but I could recover the save file using Checkpoint. Before the pass, neither the 3DS nor Checkpoint would even recognize that a cartridge was inserted.
+
+Thanks again [skawo](https://github.com/skawo)!
+
 # ![GodMode9](https://github.com/d0k3/GodMode9/blob/master/resources/logo.png)
+
 _A full access file browser for the 3DS console_ :godmode:
 
 GodMode9 is a full access file browser for the Nintendo 3DS console, giving you access to your SD card, to the FAT partitions inside your SysNAND and EmuNAND and to basically anything else. Among other functionality (see below), you can copy, delete, rename files and create folders.
