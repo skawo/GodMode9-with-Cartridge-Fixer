@@ -1,16 +1,159 @@
-# GodMode9 with Cartridge-Fixer
+<h1>Nintendo 3DS Cartridge Fixer</h1>
 
-This is a fork of [skawo's fork](https://github.com/skawo/GodMode9-with-Cartridge-Fixer) rebased to the most recent version of GodMode9. All credit to them. Refer to their fork's README for usage details and warnings.
+<h2>Warning: This is EXPERIMENTAL software. This might not fix your cartridge, and while it shouldn't make them worse, there are no guarantees.</h2>
 
-I needed it to run with a recent version of GodMode9. Rebasing was not trivial due to unrelated whitespace changes among other things.
-To make future rebases easier, this fork contains a cleaned up commit history which only adds/modifies what's absolutely necessary.
+3DS cartridges contain a NAND flash chip, which, if unused for long periods of time, may become corrupted. Thankfully, the controller chip has an error correction function which can restore the corrupted data. 
 
-A single pass over an incredibly bad Pokemon Alpha Sapphire cartridge took ~7 days. I wasn't able to play it, but I could recover the save file using Checkpoint. Before the pass, neither the 3DS nor Checkpoint would even recognize that a cartridge was inserted.
+This fork of GodMode 9 has been edited to make more extensive use of this functionality; the program can now scan the cartridge for errors, and if they're found, will re-read the offending chunk of data while running the refresh function until it hopefully corrects itself. If your cartridge appears to load infinitely, or frequently crashes from non-gameplay-related reasons, this tool has a chance to fix it.
 
-Thanks again [skawo](https://github.com/skawo)!
+## Usage
 
+1. Install **Luma CFW** if it is not already installed.
+
+2. Download the compiled `.firm` file from the **Releases** section and copy it to:
+
+   ```text
+   SD:/luma/payloads/
+   ```
+
+3. Insert the SD card into the 3DS, then power it on while holding **START**.
+
+4. If a payload menu appears, select **GodMode Refresh firm**.  
+   If no menu appears, continue normally.
+
+5. Select:
+
+   ```text
+   GAMECART
+   ```
+
+6. A list of files should appear.
+
+   - If no files are shown:
+     - Remove and reinsert the game cartridge
+     - Try again
+
+7. Select the file ending in:
+
+   ```text
+   .3ds
+   ```
+
+   **Do not select:**
+
+   ```text
+   .trim.3ds
+   ```
+
+8. Select:
+
+   ```text
+   NCSD image options...
+   ```
+
+9. Select:
+
+   ```text
+   Verify
+   ```
+
+This checks whether the cartridge has this specific type of corruption or whether a different issue is causing the problem.
+
+### If verification fails
+
+1. Return to:
+
+   ```text
+   NCSD image options
+   ```
+
+2. Select:
+
+   ```text
+   Fix cartridge corruption
+   ```
+
+3. If **Fix cartridge corruption** is missing:
+
+   You likely launched the standard version of GodMode9 instead of the refresh version.
+
+   Confirm the refresh `.firm` file is located at:
+
+   ```text
+   SD:/luma/payloads/
+   ```
+
+   Then relaunch it.
+
+### After the repair process finishes
+
+1. Return to:
+
+   ```text
+   NCSD image options
+   ```
+
+2. Select:
+
+   ```text
+   Verify
+   ```
+
+If verification succeeds, the repair is complete.
+
+If verification still fails, run **Fix cartridge corruption** again. Some cartridges require multiple repair passes before they become stable.
+
+---
+
+## Tracking Repair Progress
+
+To determine whether the cartridge is improving, observe the "unfixable chunks" number. This number is increased whenever a chunk cannot be fixed, or whenever it's manually skipped.
+
+Compare the number after each repair pass:
+
+   - If the number of bad blocks decreases after each run, the cartridge is improving. Continue the repair process.
+   - If the number of bad blocks does not decrease after **2–3 attempts**, those blocks are likely permanent and probably will not improve with additional runs.
+
+1. You can also track this by holding **Y** while selecting:
+
+   ```text
+   Fix cartridge corruption
+   ```
+
+2. A log of bad blocks will be created at:
+
+   ```text
+   SD:/gm9/out/
+   ```
+
+<b>This will take a while. As in, it can take more than a day for heavily corrupted carts. You can close the 3DS while this is happening.</b><br>​ The time it takes to restore a cartridge depends on how corrupted it is. The ETA shown in the program assumes all blocks will pass on first try - it does not show how long the fixing will actually take.
+
+As long as the "Current hash" value is changing, the program is doing its thing. If "Current hash" stops updating, the refresh function has stopped working and that block will be skipped after 20 tries without change. You can try to use the SELECT mode to see if it helps that block recover. 
+
+There is a possibility that a block will never fix itself despite 'current hash' continuing to update - after 500 retries, an option to skip fixing the current chunk (by holding Y) is provided. That being said, it can take much more than 500 retries to fix a chunk, so only skip the chunk if you're sure it's stuck.
+
+<b>Though not proven, I am not sure that simply inserting the cartridge into the console ocassionally is enough to preserve its longevity: to be safe, I think the console should actually go through all the data blocks at least once. Running the GodMode9 verify function periodically (every couple years or so) should extend the cartridge's longevity.</b>
+
+From testing, it seems some games are more affected than the others. It seems the games that come up most often, and thus are most prone to this, are:
+
+- Persona Q​
+- Pokemon X and Y​
+- Pokemon Omega Ruby and Alpha Sapphire​
+- Super Smash Bros. for Nintendo 3DS​
+- Mario Kart 7​
+- Fire Emblem Echoes​
+- Fire Emblem Fates​
+
+
+<b>Credits:</b><br>
+Skawo - Programming<br>
+themmj - Rebasing to newest GodMode9<br>
+RoadrunnerWMC - Help<br>
+Pleasehelpme2 - Testing<br>
+BreadLoaf - Testing<br>
+
+<br><br><br><br><br><br><br><br>Original readme follows below.<br><br><br><br><br><br><br><br>
 # ![GodMode9](https://github.com/d0k3/GodMode9/blob/master/resources/logo.png)
-
 _A full access file browser for the 3DS console_ :godmode:
 
 GodMode9 is a full access file browser for the Nintendo 3DS console, giving you access to your SD card, to the FAT partitions inside your SysNAND and EmuNAND and to basically anything else. Among other functionality (see below), you can copy, delete, rename files and create folders.
@@ -53,7 +196,7 @@ Build `GodMode9.firm` via `make firm`. This requires [firmtool](https://github.c
 
 You may run `make release` to get a nice, release-ready package of all required files. To build __SafeMode9__ (a bricksafe variant of GodMode9, with limited write permissions) instead of GodMode9, compile with `make FLAVOR=SafeMode9`. To switch screens, compile with `make SWITCH_SCREENS=1`. For additional customization, you may choose the internal font by replacing `font_default.frf` inside the `data` directory. You may also hardcode the brightness via `make FIXED_BRIGHTNESS=x`, whereas `x` is a value between 0...15.
 
-Further customization is possible by hardcoding `aeskeydb.bin` (just put the file into the `data` folder when compiling). All files put into the `data` folder will turn up in the `V:` drive, but keep in mind there's a hard 223.5KiB limit for all files inside, including overhead. A standalone script runner is compiled by providing `autorun.lua` or `autorun.gm9` (again, in the `data` folder) and building with `make SCRIPT_RUNNER=1`. There's more possibility for customization, read the Makefiles to learn more.
+Further customization is possible by hardcoding `aeskeydb.bin` (just put the file into the `data` folder when compiling). All files put into the `data` folder will turn up in the `V:` drive, but keep in mind there's a hard 3MB limit for all files inside, including overhead. A standalone script runner is compiled by providing `autorun.gm9` (again, in the `data` folder) and building with `make SCRIPT_RUNNER=1`. There's more possibility for customization, read the Makefiles to learn more.
 
 To build a .firm signed with SPI boot keys (for ntrboot and the like), run `make NTRBOOT=1`. You may need to rename the output files if the ntrboot installer you use uses hardcoded filenames. Some features such as boot9 / boot11 access are not currently available from the ntrboot environment.
 
@@ -77,10 +220,6 @@ For certain functionality, GodMode9 may need 'support files'. Support files shou
 * __`seeddb.bin`__: This file is optional and required to decrypt and mount seed-encrypted NCCHs and CIAs (if the seed in question is not installed to your NAND). Note that your seeddb.bin must also contain the seed for the specific game you need to decrypt.
 * __`encTitleKeys.bin`__ / __`decTitleKeys.bin`__: These files are optional and provide titlekeys, which are required to decrypt and install contents downloaded from CDN (for DSi and 3DS content).
 
-### Fonts and translations
-GodMode9 also supports custom fonts and translations as support files. These both use custom formats, fonts use FRF (Font RIFF) files which can be created using the `fontriff.py` Python script in the 'utils' folder. Translations use TRF (Translation RIFF) files from the `transriff.py` script. Examples of the inputs to these scripts can be found in the 'fonts' and 'languages' folders of the 'resources' folder respectively.
-
-TRF files can be placed in `0:/gm9/languages` to show in the language menu accessible from the HOME menu and shown on first load. Official translations are provided from the community via the [GodMode9 Crowdin](https://crowdin.com/project/GodMode9). Languages can use a special font by having an FRF with the same name, for example `en.trf` and `en.frf`.
 
 ## Drives in GodMode9
 GodMode9 provides access to system data via drives, a listing of what each drive contains and additional info follows below. Some of these drives are removable (such as drive `7:`), some will only turn up if they are available (drive `8:` and everything associated with EmuNAND, f.e.). Information on the 3DS console file system is also found on [3Dbrew.org](https://3dbrew.org/wiki/Flash_Filesystem).
@@ -104,7 +243,7 @@ GodMode9 provides access to system data via drives, a listing of what each drive
 * __`K: AESKEYDB IMAGE`__: An `aeskeydb.bin` image can be mounted and accessed via this drive. The drive shows all keys inside the aeskeydb.bin. This is read-only.
 * __`T: TICKET.DB IMAGE / BDRI IMAGE`__: Ticket database files can be mounted and accessed via this drive. This provides easy and quick access to all tickets inside the `ticket.db`. This drive also provides access to other BDRI images, such as the Title database (`title.db`).
 * __`M: MEMORY VIRTUAL`__: This provides access to various memory regions. This is protected by a special write permission, and caution is advised when doing modifications inside this drive. This drive also gives access to `boot9.bin`, `boot11.bin` (boot9strap only) and `otp.mem` (sighaxed systems only).
-* __`V: VRAM VIRTUAL`__: This drive resides in part of ARM9 internal memory and contains files essential to GodMode9. The font (in FRF format), the splash logo (in PNG format) and the readme file are found there, as well as any file that is provided inside the `data` folder at build time. This is read-only.
+* __`V: VRAM VIRTUAL`__: This drive resides in the first VRAM bank and contains files essential to GodMode9. The font (in FRF format), the splash logo (in PNG format) and the readme file are found there, as well as any file that is provided inside the `data` folder at build time. This is read-only.
 * __`Y: TITLE MANAGER`__: The title manager is accessed via the HOME menu and provides easy access to all installed titles.
 * __`Z: LAST SEARCH`__: After a search operation, search results are found inside this drive. The drive can be accessed at a later point to return to the former search results.
 
@@ -128,15 +267,14 @@ With the possibilites GodMode9 provides, not everything may be obvious at first 
 * __Search drives and folders__: Just press R+A on the drive / folder you want to search.
 * __Compare and verify files__: Press the A button on the first file, select `Calculate SHA-256`. Do the same for the second file. If the two files are identical, you will get a message about them being identical. On the SDCARD drive (`0:`) you can also write an SHA file, so you can check for any modifications at a later point.
 * __Hexview and hexedit any file__: Press the A button on a file and select `Show in Hexeditor`. A button again enables edit mode, hold the A button and press arrow buttons to edit bytes. You will get an additional confirmation prompt to take over changes. Take note that for certain files, write permissions can't be enabled.
-* __View/edit text files in a text editor__: Press the A button on a file and select `Show in Text Editor` (only shows up for actual text files). You can enable wordwrapped mode via R+Y, and navigate around the file via R+X and the dpad.
+* __View text files in a text viewer__: Press the A button on a file and select `Show in Textviewer` (only shows up for actual text files). You can enable wordwrapped mode via R+Y, and navigate around the file via R+X and the dpad.
 * __Chainload FIRM payloads__: Press the A button on a FIRM file, select `FIRM options` -> `Boot FIRM`. Keep in mind you should not run FIRMs from dubious sources and that the write permissions system is no longer in place after booting a payload.
 * __Chainload FIRM payloads from a neat menu__: The `payloads` menu is found inside the HOME button menu. It provides any FIRM found in `0:/gm9/payloads` for quick chainloading.
 * __Inject a file to another file__: Put exactly one file (the file to be injected from) into the clipboard (via the Y button). Press A on the file to be injected to. There will be an option to inject the first file into it.
 
 ### Scripting functionality
-* __Run .lua scripts from anywhere on your SD card__: You can run Lua scripts via the A button menu. For an overview of usable commands have a look into the documentation and sample scripts included in the release archive. *Don't run scripts from untrusted sources.*
-* __Run Lua scripts via a neat menu__: Press the HOME button, select `More...` -> `Lua scripts...`. Any script you put into `0:/gm9/luascripts` (subdirs included) will be found here. Scripts ran via this method won't have the confirmation at the beginning either.
-* __Run legacy .gm9 scripts__: The old format of .gm9 scripts is still available, but is deprecated and will see no further development.
+* __Run .gm9 scripts from anywhere on your SD card__: You can run scripts in .gm9 format via the A button menu. .gm9 scripts use a shell-like language and can be edited in any text editor. For an overview of usable commands have a look into the sample scripts included in the release archive. *Don't run scripts from untrusted sources.*
+* __Run .gm9 scripts via a neat menu__: Press the HOME button, select `More...` -> `Scripts...`. Any script you put into `0:/gm9/scripts` (subdirs included) will be found here. Scripts ran via this method won't have the confirmation at the beginning either.
 
 ### SD card handling
 * __Format your SD card / setup an EmuNAND__: Press the HOME button, select `More...` -> `SD format menu`. This also allows to setup a RedNAND (single/multi) or GW type EmuNAND on your SD card. You will get a warning prompt and an unlock sequence before any operation starts.
@@ -196,13 +334,9 @@ This tool would not have been possible without the help of numerous people. Than
 * **Wolfvak** for ARM11 code, FIRM binary launcher, exception handlers, PCX code, Makefile and for help on countless other occasions
 * **SciresM** for helping me figure out RomFS and for boot9strap
 * **SciresM**, **Myria**, **Normmatt**, **TuxSH** and **hedgeberg** for figuring out sighax and giving us access to bootrom
-* **ihaveamac** for implementing Lua support, and first developing the simple CIA generation method and for being of great help in porting it
-* **DarkRTA** for linker support during the implementation of Lua
-* **luigoalma** for fixing Lua to compile without issues
-* **Gruetzig** for re-implementing the Lua os module
+* **ihaveamac** for first developing the simple CIA generation method and for being of great help in porting it
 * **wwylele** and **aspargas2** for documenting and implementing the DISA, DIFF, and BDRI formats
 * **dratini0** for savefile management, based on [TWLSaveTool](https://github.com/TuxSH/TWLSaveTool/)
-* **Pk11** for unicode support and her ongoing work on GodMode9 translations and translation support
 * **b1l1s** for helping me figure out A9LH compatibility
 * **Gelex** and **AuroraWright** for helping me figure out various things
 * **stuckpixel** for the new 6x10 font and help on various things
@@ -219,8 +353,6 @@ This tool would not have been possible without the help of numerous people. Than
 * **Lilith Valentine** for testing and helpful advice
 * **Project Nayuki** for [qrcodegen](https://github.com/nayuki/QR-Code-generator)
 * **Amazingmax fonts** for the Amazdoom font
-* **TakWolf** for [fusion-pixel-font](https://github.com/TakWolf/fusion-pixel-font) used for Chinese and Korean
-* **nevumx** for turning the text viewer into a text editor with UTF-8 and LF/CRLF support
 * The fine folks on **the official GodMode9 IRC channel and Discord server**
 * The fine folks on **freenode #Cakey**
 * All **[3dbrew.org](https://www.3dbrew.org/wiki/Main_Page) editors**
