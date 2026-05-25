@@ -107,9 +107,14 @@ If verification still fails, run **Fix cartridge corruption** again. Some cartri
 
 ## Tracking Repair Progress
 
-To determine whether the cartridge is improving:
+To determine whether the cartridge is improving, observe the "unfixable chunks" number. This number is increased whenever a chunk is skipped, or cannot be fixed.
 
-1. Hold **Y** while selecting:
+Compare the number after each repair pass:
+
+   - If the number of bad blocks decreases after each run, the cartridge is improving. Continue the repair process.
+   - If the number of bad blocks does not decrease after **2–3 attempts**, those blocks are likely permanent and probably will not improve with additional runs.
+
+1. You can also track this by holding **Y** while selecting:
 
    ```text
    Fix cartridge corruption
@@ -120,11 +125,6 @@ To determine whether the cartridge is improving:
    ```text
    SD:/gm9/out/
    ```
-
-3. Compare the logs after each repair pass:
-
-   - If the number of bad blocks decreases after each run, the cartridge is improving. Continue the repair process.
-   - If the number of bad blocks does not decrease after **2–3 attempts**, those blocks are likely permanent and probably will not improve with additional runs.
 
 <b>This will take a while. As in, it can take more than a day for heavily corrupted carts. You can close the 3DS while this is happening.</b><br>​ The time it takes to restore a cartridge depends on how corrupted it is. The ETA shown in the program assumes all blocks will pass on first try - it does not show how long the fixing will actually take.
 
