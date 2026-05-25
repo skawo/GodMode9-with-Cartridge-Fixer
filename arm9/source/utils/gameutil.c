@@ -24,6 +24,8 @@ extern bool force_refresh;
 #define LOG_FILE_BUF_SIZE STD_BUFFER_SIZE
 //#define TEST_MODE 0
 
+int bad_chunks = 0;
+
 u32 GetCbcBlocks(FIL* file, void* buffer, u64 offset, u32 count, u8* titlekey, u8* forced_iv) {
     u8 iv[16] __attribute__((aligned(4)));
     UINT btr;
@@ -107,7 +109,7 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
     int was_bad_retries = 0;
     int hash_stuck_times = 0;
     int hash_bad_retries = 0;
-
+   
     while (!hash_match)
     {
         if (CheckButton(BUTTON_B))
@@ -163,6 +165,8 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
             {
                 if (CheckButton(BUTTON_Y) || autoskip)
                 {
+                    ++bad_chunks;
+                    
                     if (log)
                         *outstr += sprintf(*outstr, "Skipped: %x\n", offset_back);
 
@@ -183,6 +187,8 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
                 if (hash_stuck_times >= 20)
                 {
                     free(buffer);
+                   
+                    ++bad_chunks;
 
                     if (log)
                         *outstr += sprintf(*outstr, "Unfixable: %x\n", offset_back);
@@ -687,6 +693,13 @@ u32 VerifyTmdContent(const char* path, u64 offset, TmdContentChunk* chunk, const
     return memcmp(hash, expected, 32);
 }
 
+void WriteBadChunksCount(int chunkCount)
+{
+    char* chunksBadStr[30];
+    sprintf(chunksBadStr, "Unfixable chunks: %d", chunkCount);
+    DrawString(MAIN_SCREEN, chunksBadStr, 120, 16, COLOR_STD_FONT, COLOR_STD_BG);    
+}
+
 u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autoskip) 
 {
     static bool cryptofix_always = false;
@@ -698,6 +711,10 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autosk
 
     char* dumpstr;
     char *wstr;
+    char* chunksBad[30];
+    
+    bad_chunks = 0;
+    WriteBadChunksCount(bad_chunks);
 
     if (log)
     {
@@ -800,6 +817,7 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autosk
         for (u32 i = 0; i < 10; i++) 
         {
             DrawString(MAIN_SCREEN, "Verifying EXEFS", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+            WriteBadChunksCount(bad_chunks);
 
             ExeFsFileHeader* exefile = exefs.files + i;
             u8* hash = exefs.hashes[9 - i];
@@ -889,6 +907,7 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autosk
             for (u32 i = 0; (i < n_blocks); i++) 
             {
                 DrawString(MAIN_SCREEN, "Running thorough ROMFS refresh.", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+                WriteBadChunksCount(bad_chunks);
 
                 ver_romfs = CheckFixNcchHash(lvl2_data + (i*0x20), &file, 1 << block_log, offset, &ncch, NULL, offset + offset_add, &wstr, log, autoskip);
 

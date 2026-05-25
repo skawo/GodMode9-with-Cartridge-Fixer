@@ -44,7 +44,7 @@
 #endif
 
 extern int refresh_call_every;
-
+extern int bad_chunks;
 
 typedef struct {
     char path[256];
@@ -153,7 +153,7 @@ u32 SplashInit(const char* modestr) {
         "--------------------------------", "https://github.com/d0k3/GodMode9",
         "Releases:", "https://github.com/d0k3/GodMode9/releases/", // this won't fit with a 8px width font
         "Hourlies:", "https://d0k3.secretalgorithm.com/");
-    DrawStringF(TOP_SCREEN, 0, 0, COLOR_STD_FONT, COLOR_STD_BG, "Cartridge Fixer Fork v1.3 by Skawo. \nThanks to Pleasehelpme2 and BreadLoaf for testing.");
+    DrawStringF(TOP_SCREEN, 0, 0, COLOR_STD_FONT, COLOR_STD_BG, "Cartridge Fixer Fork v1.5 by Skawo. \nThanks to Pleasehelpme2 and BreadLoaf for testing.");
     DrawStringF(BOT_SCREEN, pos_xu, pos_yu, COLOR_STD_FONT, COLOR_STD_BG, "%s", loadstr);
     DrawStringF(BOT_SCREEN, pos_xb, pos_yu, COLOR_STD_FONT, COLOR_STD_BG, "built: " DBUILTL);
 
@@ -1579,8 +1579,16 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
             else
                 return 0;
         }
-
-        ShowPrompt(false, "Corruption fix run %s", (AttemptFixNcsdFile(file_path, log, autoskip) == 0) ? "finished. Run verify." : "failed.");
+        
+        if (AttemptFixNcsdFile(file_path, log, autoskip) == 0)
+        {
+            if (!bad_chunks)
+                ShowPrompt(false, "Finished with 0 unfixable chunks. Run verify.", bad_chunks);
+            else
+                ShowPrompt(false, "Finished with %d unfixable chunks.", bad_chunks);
+        }
+        else
+            ShowPrompt(false, "Corruption fixer failed.");
 
         refresh_call_every = 10000;
 
