@@ -107,7 +107,7 @@ If verification still fails, run **Fix cartridge corruption** again. Some cartri
 
 ## Tracking Repair Progress
 
-To determine whether the cartridge is improving, observe the "unfixable chunks" number. This number is increased whenever a chunk is skipped, or cannot be fixed.
+To determine whether the cartridge is improving, observe the "unfixable chunks" number. This number is increased whenever a chunk cannot be fixed, or whenever it's manually skipped.
 
 Compare the number after each repair pass:
 
