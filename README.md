@@ -4,27 +4,146 @@
 
 3DS cartridges contain a NAND flash chip, which, if unused for long periods of time, may become corrupted. Thankfully, the controller chip has an error correction function which can restore the corrupted data. 
 
-During normal 3DS operation, this function is only run every 10000 reads, every time a cart is inserted and every time the system is powering down.
+This fork of GodMode 9 has been edited to make more extensive use of this functionality; the program can now scan the cartridge for errors, and if they're found, will re-read the offending chunk of data while running the refresh function until it hopefully corrects itself. If your cartridge appears to load infinitely, or frequently crashes from non-gameplay-related reasons, this tool has a chance to fix it.
 
-This fork of GodMode 9 has been edited to make more extensive use of this functionality; the program can now scan the cartridge for errors, and if they're found, will run the refresh function on that chunk of data until it corrects itself. If your cartridge appears to load infinitely, or frequently crashes from non-gameplay-related reasons, this tool has a chance to fix it.
+## Usage
 
-<b>To make use of this function:</b><br>
+1. Install **Luma CFW** if it is not already installed.
 
-1. Run the program (Install the Luma CFW, put the compiled .firm file from the Releases section in `luma/payloads/`, turn on the 3DS holding START) and insert a cartridge. 
-2. Choose "GAMECART". A list of files will pop up. If it doesn't, try reinserting the cartridge.
-3. Choose the file with the .3ds extension (but NOT .trim.3ds, just .3ds).
-4. Choose "NCSD image options..."
-5. Choose "Verify" to see whether the cartridge is really corrupted in this manner, or if the issue stems from somewhere else.
-6. If the Verify fails, go into "NCSD image options" and choose "Fix cartridge corruption".
-7. After the fixer finishes, go into "NCSD image options" again and choose "Verify".
+2. Download the compiled `.firm` file from the **Releases** section and copy it to:
 
-<b>This will take a while. As in, it can take more than a day for heavily corrupted carts.</b><br>​
+   ```text
+   SD:/luma/payloads/
+   ```
 
-If the verification fails, try running the fixer process again. It may take several run-throughs before the whole cart is stabilized. To verify that the cart is getting better with each-run through, hold Y while selecting the "Fix cartridge corruption" option. This will make the console output a log of bad blocks to the SD card (to the `/gm9/out` folder). If that list keeps getting shorter with each run-through, great! Keep going. if the number of entries doesn't decrease after a 2-3 attempts, then those blocks are probably not going to get better with repeated runs. As last resort, you can hold also try holding SELECT when selecting the fixer to make refresh run on EVERY read (not recommended unless the cartridge is almost definitely a lost cause).
+3. Insert the SD card into the 3DS, then power it on while holding **START**.
 
-The time it takes to restore a cartridge depends on how corrupted it is. As long as the "Current hash" value is changing, the program is doing its thing. If "Current hash" stops updating, the refresh function has stopped working and that block will be skipped after 20 tries without change. You can try to use the SELECT mode to see if it helps that block recover. There is a possibility that a block will never fix itself despite 'current hash' continuing to update - after 500 retries, an option to skip fixing the current chunk (by pressing Y) is provided. That being said, it can take much more than 500 retries to fix a chunk, so only skip the chunk if you're sure it's stuck.
+4. If a payload menu appears, select **GodMode Refresh firm**.  
+   If no menu appears, continue normally.
 
-If you're looking for a way to confirm your cartridges are working fine, GodMode9 (and as an extension, this tool as well) has a verify function which checks all the files - a more thorough check than just trying the cartridge out regularly. A cartridge might start but still have some random files corrupted. Running the verify function periodically (every year or so) could extend the cartridge's longevity, as well. 
+5. Select:
+
+   ```text
+   GAMECART
+   ```
+
+6. A list of files should appear.
+
+   - If no files are shown:
+     - Remove and reinsert the game cartridge
+     - Try again
+
+7. Select the file ending in:
+
+   ```text
+   .3ds
+   ```
+
+   **Do not select:**
+
+   ```text
+   .trim.3ds
+   ```
+
+8. Select:
+
+   ```text
+   NCSD image options...
+   ```
+
+9. Select:
+
+   ```text
+   Verify
+   ```
+
+This checks whether the cartridge has this specific type of corruption or whether a different issue is causing the problem.
+
+### If verification fails
+
+1. Return to:
+
+   ```text
+   NCSD image options
+   ```
+
+2. Select:
+
+   ```text
+   Fix cartridge corruption
+   ```
+
+3. If **Fix cartridge corruption** is missing:
+
+   You likely launched the standard version of GodMode9 instead of the refresh version.
+
+   Confirm the refresh `.firm` file is located at:
+
+   ```text
+   SD:/luma/payloads/
+   ```
+
+   Then relaunch it.
+
+### After the repair process finishes
+
+1. Return to:
+
+   ```text
+   NCSD image options
+   ```
+
+2. Select:
+
+   ```text
+   Verify
+   ```
+
+If verification succeeds, the repair is complete.
+
+If verification still fails, run **Fix cartridge corruption** again. Some cartridges require multiple repair passes before they become stable.
+
+---
+
+## Tracking Repair Progress
+
+To determine whether the cartridge is improving:
+
+1. Hold **Y** while selecting:
+
+   ```text
+   Fix cartridge corruption
+   ```
+
+2. A log of bad blocks will be created at:
+
+   ```text
+   SD:/gm9/out/
+   ```
+
+3. Compare the logs after each repair pass:
+
+   - If the number of bad blocks decreases after each run, the cartridge is improving. Continue the repair process.
+   - If the number of bad blocks does not decrease after **2–3 attempts**, those blocks are likely permanent and probably will not improve with additional runs.
+
+<b>This will take a while. As in, it can take more than a day for heavily corrupted carts. You can close the 3DS while this is happening.</b><br>​ The time it takes to restore a cartridge depends on how corrupted it is. The ETA shown in the program assumes all blocks will pass on first try - it does not show how long the fixing will actually take.
+
+As long as the "Current hash" value is changing, the program is doing its thing. If "Current hash" stops updating, the refresh function has stopped working and that block will be skipped after 20 tries without change. You can try to use the SELECT mode to see if it helps that block recover. 
+
+There is a possibility that a block will never fix itself despite 'current hash' continuing to update - after 500 retries, an option to skip fixing the current chunk (by holding Y) is provided. That being said, it can take much more than 500 retries to fix a chunk, so only skip the chunk if you're sure it's stuck.
+
+<b>Though not proven, I am not sure that simply inserting the cartridge into the console ocassionally is enough to preserve its longevity: to be safe, I think the console should actually go through all the data blocks at least once. Running the GodMode9 verify function periodically (every couple years or so) should extend the cartridge's longevity.</b>
+
+From testing, it seems some games are more affected than the others. It seems the games that come up most often, and thus are most prone to this, are:
+
+- Persona Q​
+- Pokemon X and Y​
+- Pokemon Omega Ruby and Alpha Sapphire​
+- Super Smash Bros. for Nintendo 3DS​
+- Mario Kart 7​
+- Fire Emblem Echoes​
+- Fire Emblem Fates​
+
 
 <b>Credits:</b><br>
 Skawo - Programming<br>
