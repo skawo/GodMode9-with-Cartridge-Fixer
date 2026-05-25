@@ -8,10 +8,12 @@
 #include "fsutil.h"
 #include "unittype.h"
 #include "nand.h"
+#include "gyro.h"
 #include "gm9loader.h"
 #include "gm9os.h"
 #include "gm9ui.h"
 #include "gm9title.h"
+#include "gm9internali2c.h"
 #include "gm9internalfs.h"
 #include "gm9internalsys.h"
 
@@ -89,6 +91,12 @@ void CheckWritePermissionsLuaError(lua_State* L, const char* path) {
     }
 }
 
+void SetWritePermissionsLuaError(lua_State* L, u32 perm) {
+    if (!SetWritePermissions(perm, true)) {
+        luaL_error(L, "failed to set write permissions");
+    }
+}
+
 static const luaL_Reg gm9lualibs[] = {
     // built-ins
     {LUA_GNAME, luaopen_base},
@@ -108,6 +116,7 @@ static const luaL_Reg gm9lualibs[] = {
     // gm9 custom internals (usually wrapped by a pure lua module)
     {GM9LUA_INTERNALFSLIBNAME, gm9lua_open_internalfs},
     {GM9LUA_INTERNALSYSLIBNAME, gm9lua_open_internalsys},
+    {GM9LUA_I2CLIBNAME, gm9lua_open_internali2c},
 
     {NULL, NULL}
 };
@@ -187,6 +196,14 @@ bool ExecuteLuaScript(const char* path_script) {
 
     lua_pushinteger(L, GetNandSizeSectors(NAND_SYSNAND) * 0x200);
     lua_setglobal(L, "NANDSIZE");
+
+    u32 gyro_model = GetGyroModel();
+    if (gyro_model) {
+        lua_pushinteger(L, gyro_model);
+    } else {
+        lua_pushnil(L);
+    }
+    lua_setglobal(L, "GYROMODEL");
 
     lua_pushboolean(L, IS_DEVKIT);
     lua_setglobal(L, "IS_DEVKIT");

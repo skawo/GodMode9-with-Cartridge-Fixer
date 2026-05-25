@@ -70,6 +70,10 @@ void PRINTF_ARGS(4) DrawStringCenter(u16 *screen, u32 color, u32 bgcolor, const 
 
 u32 GetCharSize(const char* str);
 u32 GetPrevCharSize(const char* str);
+const char* GetNextChar(const char* chr);
+const char* GetPrevChar(const char* chr);
+void IncChar(const char** chr);
+void DecChar(const char** chr);
 
 u32 GetDrawStringHeight(const char* str);
 u32 GetDrawStringWidth(const char* str);
@@ -81,7 +85,7 @@ void WordWrapString(char* str, int llen);
 void ResizeString(char* dest, const char* orig, int nlength, int tpos, bool align_right);
 void TruncateString(char* dest, const char* orig, int nlength, int tpos);
 void FormatNumber(char* str, u64 number);
-void FormatBytes(char* str, u64 bytes);
+void FormatBytes(char* str, u64 bytes, bool useLocale);
 
 void PRINTF_ARGS(1) ShowString(const char *format, ...);
 void PRINTF_ARGS(2) ShowStringF(u16* screen, const char *format, ...);

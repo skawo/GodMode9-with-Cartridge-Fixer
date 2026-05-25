@@ -206,12 +206,16 @@ static int ui_show_text_viewer(lua_State* L) {
 
     // validate text ourselves so we can return a better error
     // MemTextViewer calls ShowPrompt if it's bad, and i don't want that
+
+    if (len >= STD_BUFFER_SIZE) {
+        return luaL_error(L, "text is too large");
+    }
     
     if (!(ValidateText(text, len))) {
         return luaL_error(L, "text validation failed");
     }
 
-    if (!(MemTextViewer(text, len, 1, false))) {
+    if (!(MemTextViewer(text, len, 1, false, 0, NULL))) {
         return luaL_error(L, "failed to run MemTextViewer");
     }
 
@@ -225,6 +229,11 @@ static int ui_show_file_text_viewer(lua_State* L) {
     // validate text ourselves so we can return a better error
     // MemTextViewer calls ShowPrompt if it's bad, and i don't want that
     // and FileTextViewer calls the above function
+
+    size_t fileSize = FileGetSize(path);
+    if (fileSize >= STD_BUFFER_SIZE) {
+        return luaL_error(L, "text file is too large");
+    }
     
     char* text = malloc(STD_BUFFER_SIZE);
     if (!text) {
@@ -233,16 +242,14 @@ static int ui_show_file_text_viewer(lua_State* L) {
 
     // TODO: replace this with something that can detect file read errors and actual 0-length files
     size_t flen = FileGetData(path, text, STD_BUFFER_SIZE - 1, 0);
-
     text[flen] = '\0';
-    u32 len = (ptrdiff_t)memchr(text, '\0', flen + 1) - (ptrdiff_t)text;
-    
-    if (!(ValidateText(text, len))) {
+
+    if (!(ValidateText(text, flen))) {
         free(text);
         return luaL_error(L, "text validation failed");
     }
 
-    if (!(MemTextViewer(text, len, 1, false))) {
+    if (!(MemTextViewer(text, flen, 1, false, STD_BUFFER_SIZE - 1, path))) {
         free(text);
         return luaL_error(L, "failed to run MemTextViewer");
     }
@@ -284,11 +291,16 @@ static int ui_ask_selection(lua_State* L) {
 }
 
 static int ui_format_bytes(lua_State* L) {
-    CheckLuaArgCount(L, 1, "ui.format_bytes");
+    bool extra = CheckLuaArgCountPlusExtra(L, 1, "ui.format_bytes");
     lua_Integer size = luaL_checkinteger(L, 1);
 
+    u32 flags = 0;
+    if (extra) {
+        flags = GetFlagsFromTable(L, 2, flags, USE_LOCALE);
+    }
+
     char bytesstr[32] = { 0 };
-    FormatBytes(bytesstr, (u64)size);
+    FormatBytes(bytesstr, (u64)size, flags & USE_LOCALE);
 
     lua_pushstring(L, bytesstr);
     return 1;
