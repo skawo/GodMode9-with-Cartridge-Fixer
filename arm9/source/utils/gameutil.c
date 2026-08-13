@@ -684,7 +684,6 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autosk
     char* dumpstr;
     char *wstr;
     
-    bad_chunks = 0;
     WriteBadChunksCount(bad_chunks);
 
     if (log) {
@@ -1140,6 +1139,8 @@ u32 AttemptFixNcsdFile(const char* path, bool log, bool autoskip) {
         ShowPrompt(false, "%s\n%s", pathstr, STR_ERROR_NOT_NCSD_FILE);
         return 1;
     }
+    
+    bad_chunks = 0;
 
     // validate NCSD contents
     for (u32 i = 0; i < 8; i++) {
