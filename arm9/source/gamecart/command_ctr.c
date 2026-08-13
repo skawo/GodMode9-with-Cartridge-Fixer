@@ -42,7 +42,7 @@ void CTR_CmdReadData(u32 sector, u32 length, u32 blocks, void* buffer)
         char tempstr[64];
         snprintf(tempstr, 64, "%d", refresh_count);
         DrawString(MAIN_SCREEN, "Refresh count:", 0, 0, COLOR_STD_FONT, COLOR_STD_BG);
-        DrawString(MAIN_SCREEN, tempstr, 0, 10, COLOR_STD_FONT, COLOR_STD_BG);
+        DrawString(MAIN_SCREEN, tempstr, 0, 16, COLOR_STD_FONT, COLOR_STD_BG);
     }
 
     const u32 read_cmd[4] = {

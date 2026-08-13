@@ -666,10 +666,17 @@ void WriteBadChunksCount(int chunkCount)
 {
     char chunksBadStr[30];
     sprintf(chunksBadStr, "Unfixable chunks: %d", chunkCount);
-    DrawString(MAIN_SCREEN, chunksBadStr, 120, 16, COLOR_STD_FONT, COLOR_STD_BG);    
+    DrawString(MAIN_SCREEN, chunksBadStr, 120, 32, COLOR_STD_FONT, COLOR_STD_BG);    
 }
 
-u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autoskip)
+void WritePartitionName(int contentNum, u32 offset)
+{
+    char partNameStr[60];
+    sprintf(partNameStr, "Content %d (%08lX)", contentNum, offset);
+    DrawString(MAIN_SCREEN, partNameStr, 120, 0, COLOR_STD_FONT, COLOR_STD_BG);      
+}
+
+u32 AttemptFixNcch(int contentNum, const char* path, u32 offset, u32 size, bool log, bool autoskip)
 {
     static bool cryptofix_always = false;
     bool cryptofix = false;
@@ -685,6 +692,7 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autosk
     char *wstr;
     
     WriteBadChunksCount(bad_chunks);
+    WritePartitionName(contentNum, offset);
 
     if (log) {
         dumpstr = malloc(STD_BUFFER_SIZE);
@@ -697,13 +705,13 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autosk
         wstr += sprintf(wstr, "CORRUPTION FIX LOG ON %s\n", path);
     }
 
-    DrawString(MAIN_SCREEN, "File open...", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+    DrawString(MAIN_SCREEN, "File open...", 120, 16, COLOR_STD_FONT, COLOR_STD_BG);
 
     // open file, get NCCH, ExeFS header
     if (fvx_open(&file, path, FA_READ | FA_OPEN_EXISTING) != FR_OK)
         return 1;
 
-    DrawString(MAIN_SCREEN, "Initial checks...", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+    DrawString(MAIN_SCREEN, "Initial checks...", 120, 16, COLOR_STD_FONT, COLOR_STD_BG);
 
     // fetch and check NCCH header
     fvx_lseek(&file, offset);
@@ -721,7 +729,7 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autosk
         return 1;
     }
 
-    DrawString(MAIN_SCREEN, "Fetching ExeFS Header...", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+    DrawString(MAIN_SCREEN, "Fetching ExeFS Header...", 120, 16, COLOR_STD_FONT, COLOR_STD_BG);
 
     // fetch and check ExeFS header
     fvx_lseek(&file, offset);
@@ -737,7 +745,7 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autosk
         }
     }
 
-    DrawString(MAIN_SCREEN, "Fetching ExtHeader...", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+    DrawString(MAIN_SCREEN, "Fetching ExtHeader...", 120, 16, COLOR_STD_FONT, COLOR_STD_BG);
 
     // fetch and check ExtHeader
     fvx_lseek(&file, offset);
@@ -780,8 +788,9 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autosk
     if (!ShowProgress(0, 0, path)) return 1;
     if ((ncch.size_exefs > 0) && (memcmp(exthdr.name, "Process9", 8) != 0)) {
         for (u32 i = 0; i < 10; i++) {
-            DrawString(MAIN_SCREEN, "Verifying EXEFS", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+            DrawString(MAIN_SCREEN, "Verifying EXEFS", 120, 16, COLOR_STD_FONT, COLOR_STD_BG);
             WriteBadChunksCount(bad_chunks);
+            WritePartitionName(contentNum, offset);
 
             ExeFsFileHeader* exefile = exefs.files + i;
             u8* hash = exefs.hashes[9 - i];
@@ -791,7 +800,7 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autosk
         }
     }
 
-    DrawString(MAIN_SCREEN, "Verifying ROMFS", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+    DrawString(MAIN_SCREEN, "Verifying ROMFS", 120,16, COLOR_STD_FONT, COLOR_STD_BG);
 
     // thorough romfs verification
     if (!ver_romfs && (ncch.size_romfs > 0)) {
@@ -869,8 +878,9 @@ u32 AttemptFixNcch(const char* path, u32 offset, u32 size, bool log, bool autosk
             block_log = ivfc.log_lvl3;
             fvx_lseek(&file, offset + offset_add);
             for (u32 i = 0; i < n_blocks; i++) {
-                DrawString(MAIN_SCREEN, "Running thorough ROMFS refresh.", 120, 0, COLOR_STD_FONT, COLOR_STD_BG);
+                DrawString(MAIN_SCREEN, "Running thorough ROMFS refresh.", 120, 16, COLOR_STD_FONT, COLOR_STD_BG);
                 WriteBadChunksCount(bad_chunks);
+                WritePartitionName(contentNum, offset);
 
                 ver_romfs = CheckFixNcchHash(lvl2_data + (i*0x20), &file, 1 << block_log, offset, &ncch, NULL, offset + offset_add, &wstr, log, autoskip);
 
@@ -1151,7 +1161,7 @@ u32 AttemptFixNcsdFile(const char* path, bool log, bool autoskip) {
 
         DrawString(MAIN_SCREEN, "Attempting fix, please wait...", 0, 20, COLOR_STD_FONT, COLOR_STD_BG);
 
-        int ret = AttemptFixNcch(path, offset, size, log, autoskip);
+        int ret = AttemptFixNcch(i, path, offset, size, log, autoskip);
 
         if (ret == 2) {
             ShowPrompt(false, "Fix failed. Essential parts of the image are bad.\nTry the following: select this file again,\nhold SELECT and try to copy to gm/out.\nRun this again afterwards.");
