@@ -59,6 +59,10 @@ This fork of GodMode 9 has been edited to make more extensive use of this functi
 
 This checks whether the cartridge has this specific type of corruption or whether a different issue is causing the problem.
 
+### If verification succeeds
+
+Then your issue is not related to the cartridge itself. Try to delete and re-download the update data (if there is any). Issue could also be related to your Luma CFW settings/Locale Settings for this particular game.
+
 ### If verification fails
 
 1. Return to:
