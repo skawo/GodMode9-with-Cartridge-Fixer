@@ -61,7 +61,7 @@ This checks whether the cartridge has this specific type of corruption or whethe
 
 ### If verification succeeds
 
-Then your issue is not related to the cartridge itself. Try to delete and re-download the update data (if there is any). Issue could also be related to your Luma CFW settings/Locale Settings for this particular game. Could also be your save file (make sure to back up the save with Checkpoint before trying to delete it!)
+If you're experiencing an issue while playing the game, then it's not related to the cartridge itself. Try to delete and re-download the update data (if there is any). Issue could also be related to your Luma CFW settings/Locale Settings for this particular game. Could also be your save file (make sure to back up the save with Checkpoint before trying to delete it!)
 
 ### If verification fails
 
