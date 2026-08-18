@@ -148,7 +148,7 @@ From testing, it seems some games are more affected than the others. It seems th
 - Fire Emblem Echoes​
 - Fire Emblem Fates​
 
-Less often mentioned, but still pop up quite often:
+Less often mentioned, but still pop up quite frequently:
 - Codename S.T.E.A.M
 - Puzzle & Dragons Z + Super Mario Bros. Edition
 - Kirby: Planet Robobot
