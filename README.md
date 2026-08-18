@@ -61,7 +61,7 @@ This checks whether the cartridge has this specific type of corruption or whethe
 
 ### If verification succeeds
 
-Then your issue is not related to the cartridge itself. Try to delete and re-download the update data (if there is any). Issue could also be related to your Luma CFW settings/Locale Settings for this particular game.
+Then your issue is not related to the cartridge itself. Try to delete and re-download the update data (if there is any). Issue could also be related to your Luma CFW settings/Locale Settings for this particular game. Could also be your save file (make sure to back up the save with Checkpoint before trying to delete it!)
 
 ### If verification fails
 
@@ -154,6 +154,7 @@ Less often mentioned, but still pop up quite frequently:
 - Kirby: Planet Robobot
 - Mario & Luigi: Paper Jam
 - Tomodachi Life
+- Yokai Watch
 
 
 <b>Credits:</b><br>
