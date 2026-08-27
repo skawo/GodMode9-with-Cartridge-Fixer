@@ -105,6 +105,7 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
     int was_bad_retries = 0;
     int hash_stuck_times = 0;
     int hash_bad_retries = 0;
+    int hash_stuck_times_max = 20;
 
     while (!hash_match) {
         if (CheckButton(BUTTON_B)) {
@@ -154,12 +155,12 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
 
             if (!memcmp(hash, lasthash, 32)) {
                 hash_stuck_times++;
-                snprintf(tempstr, 64, "Hash stuck. Retries: %d/20                                      ", (int) hash_stuck_times);
+                snprintf(tempstr, 64, "Hash stuck. Retries: %d/%d                                      ", (int) hash_stuck_times, (int) hash_stuck_times_max);
                 DrawString(MAIN_SCREEN, tempstr, pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
                 hash_stuck = true;
                 hash_was_stuck = true;
 
-                if (hash_stuck_times >= 20) {
+                if (hash_stuck_times >= hash_stuck_times_max) {
                     ++bad_chunks;
                     free(buffer);
 
@@ -173,6 +174,10 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
                 }
             } else {
                 DrawString(MAIN_SCREEN, "HASH MISMATCH. Attempting refresh.                             ", pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
+                
+                if (hash_stuck && hash_stuck_times_max < 200)
+                    hash_stuck_times_max += 5;
+                
                 hash_stuck = false;
                 hash_stuck_times = 0;
             }
@@ -184,6 +189,10 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
         }
         else {
             if (was_bad_retries) {
+                
+                if (was_bad_retries == 5 && hash_stuck_times_max < 200)
+                    hash_stuck_times_max += 10;                
+                
                 snprintf(tempstr, 64, "Chunk OK now? Making sure. Retries to go: %d                    ", (int) was_bad_retries);
                 DrawString(MAIN_SCREEN, tempstr, pos_x, pos_y + 114, COLOR_STD_FONT, COLOR_STD_BG);
                 fvx_lseek(file, offset_back);
@@ -202,7 +211,7 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
         }
 
         if (hash_bad_retries > 500) {
-            DrawString(MAIN_SCREEN, "500 Retries exceeded. Press Y to skip this block.", pos_x, pos_y + 124, COLOR_STD_FONT, COLOR_STD_BG);
+            DrawString(MAIN_SCREEN, "500 retries exceeded. Hold Y to skip.", pos_x, pos_y + 124, COLOR_STD_FONT, COLOR_STD_BG);
         } else {
             DrawString(MAIN_SCREEN, "                                                 ", pos_x, pos_y + 124, COLOR_STD_FONT, COLOR_STD_BG);
         }
