@@ -59,6 +59,10 @@ This fork of GodMode 9 has been edited to make more extensive use of this functi
 
 This checks whether the cartridge has this specific type of corruption or whether a different issue is causing the problem.
 
+### If verification succeeds
+
+If you're experiencing an issue while playing the game, then it's not related to the cartridge itself. Try to delete and re-download the update data (if there is any). Issue could also be related to your Luma CFW settings/Locale Settings for this particular game. Could also be your save file (make sure to back up the save with Checkpoint before trying to delete it!)
+
 ### If verification fails
 
 1. Return to:
@@ -126,7 +130,7 @@ Compare the number after each repair pass:
    SD:/gm9/out/
    ```
 
-<b>This will take a while. As in, it can take more than a day for heavily corrupted carts. You can close the 3DS while this is happening.</b><br>​ The time it takes to restore a cartridge depends on how corrupted it is. The ETA shown in the program assumes all blocks will pass on first try - it does not show how long the fixing will actually take.
+<b>This will take a while. As in, it can take more than a day for heavily corrupted carts. You can close the 3DS while this is happening.</b><br>​ The time it takes to restore a cartridge depends on how corrupted it is. The ETA shown in the program assumes all blocks will pass on first try - it does not show how long the fixing will actually take. You will also likely have to run the process multiple times before it fully stabilises - each subsequent run should take less time, though.
 
 As long as the "Current hash" value is changing, the program is doing its thing. If "Current hash" stops updating, the refresh function has stopped working and that block will be skipped after 20 tries without change. You can try to use the SELECT mode to see if it helps that block recover. 
 
@@ -143,6 +147,14 @@ From testing, it seems some games are more affected than the others. It seems th
 - Mario Kart 7​
 - Fire Emblem Echoes​
 - Fire Emblem Fates​
+
+Less often mentioned, but still pop up quite frequently:
+- Codename S.T.E.A.M
+- Puzzle & Dragons Z + Super Mario Bros. Edition
+- Kirby: Planet Robobot
+- Mario & Luigi: Paper Jam
+- Tomodachi Life
+- Yokai Watch
 
 
 <b>Credits:</b><br>
