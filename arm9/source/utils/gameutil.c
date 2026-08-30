@@ -85,10 +85,11 @@ u32 GetNcchHeaders(NcchHeader* ncch, NcchExtHeader* exthdr, ExeFsHeader* exefs, 
 u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, NcchHeader* ncch, ExeFsHeader* exefs, u32 offset_back, char** outstr, bool log, bool autoskip)
 {
     u32 offset_data = fvx_tell(file) - offset_ncch;
-    u8 hash[32];
-    u8 lasthash[32];
+    u8 hash[32] = { 0 };
+    u8 lasthash[32] = { 0 };
     char tempstr[64];
     char hash_str[32+1];
+    char exp_hash_str[32+1];
     extern bool force_refresh;
 
     u8* buffer = (u8*) malloc(STD_BUFFER_SIZE);
@@ -105,7 +106,7 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
     int was_bad_retries = 0;
     int hash_stuck_times = 0;
     int hash_bad_retries = 0;
-    int hash_stuck_times_max = 20;
+    int hash_stuck_times_max = 50;
 
     while (!hash_match) {
         if (CheckButton(BUTTON_B)) {
@@ -128,13 +129,13 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
 
         sha_get(hash);
 
-        DrawString(MAIN_SCREEN, "Current hash:", pos_x, pos_y + 64, COLOR_STD_FONT, COLOR_STD_BG);
+        DrawString(MAIN_SCREEN, "Current:", pos_x, pos_y + 64, COLOR_STD_FONT, COLOR_STD_BG);
         snprintf(hash_str, 32+1, "%016llX%016llX", getbe64(hash + 16), getbe64(hash + 24));
         DrawString(MAIN_SCREEN, hash_str, pos_x, pos_y + 74, COLOR_STD_FONT, COLOR_STD_BG);
 
         DrawString(MAIN_SCREEN, "Expected:", pos_x, pos_y + 94, COLOR_STD_FONT, COLOR_STD_BG);
-        snprintf(hash_str, 32+1, "%016llX%016llX", getbe64(expected + 16), getbe64(expected + 24));
-        DrawString(MAIN_SCREEN, hash_str, pos_x, pos_y + 104, COLOR_STD_FONT, COLOR_STD_BG);
+        snprintf(exp_hash_str, 32+1, "%016llX%016llX", getbe64(expected + 16), getbe64(expected + 24));
+        DrawString(MAIN_SCREEN, exp_hash_str, pos_x, pos_y + 104, COLOR_STD_FONT, COLOR_STD_BG);
 
         hash_match = !memcmp(hash, expected, 32);
 
