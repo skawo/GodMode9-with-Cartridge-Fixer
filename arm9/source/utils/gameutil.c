@@ -686,10 +686,10 @@ void WritePartitionName(int contentNum, u32 offset)
     DrawString(MAIN_SCREEN, partNameStr, 120, 0, COLOR_STD_FONT, COLOR_STD_BG);      
 }
 
-u32 AttemptFixNcch(int contentNum, const char* path, u32 offset, u32 size, bool log, bool autoskip)
+u32 AttemptFixNcch(int contentNum, const char* path, u32 offset, u32 size, char** wstr, bool autoskip)
 {
-    static bool cryptofix_always = false;
     bool cryptofix = false;
+    bool log = (wstr != NULL);
     NcchHeader ncch;
     NcchExtHeader exthdr;
     ExeFsHeader exefs;
@@ -698,22 +698,8 @@ u32 AttemptFixNcch(int contentNum, const char* path, u32 offset, u32 size, bool 
     char pathstr[UTF_BUFFER_BYTESIZE(32)];
     TruncateString(pathstr, path, 32, 8);
 
-    char* dumpstr;
-    char *wstr;
-    
     WriteBadChunksCount(bad_chunks);
     WritePartitionName(contentNum, offset);
-
-    if (log) {
-        dumpstr = malloc(STD_BUFFER_SIZE);
-
-        if (!dumpstr)
-            return 1;
-
-        wstr = dumpstr;
-
-        wstr += sprintf(wstr, "CORRUPTION FIX LOG ON %s\n", path);
-    }
 
     DrawString(MAIN_SCREEN, "File open...", 120, 16, COLOR_STD_FONT, COLOR_STD_BG);
 
@@ -744,14 +730,11 @@ u32 AttemptFixNcch(int contentNum, const char* path, u32 offset, u32 size, bool 
     // fetch and check ExeFS header
     fvx_lseek(&file, offset);
     if (ncch.size_exefs && (GetNcchHeaders(&ncch, NULL, &exefs, &file, cryptofix) != 0)) {
-        bool borkedflags = false;
         if (ncch.size_exefs && NCCH_ENCRYPTED(&ncch)) {
             // disable crypto, try again
             cryptofix = true;
             fvx_lseek(&file, offset);
-            if (GetNcchHeaders(&ncch, NULL, &exefs, &file, cryptofix) == 0) {
-                borkedflags = true;
-            }
+            GetNcchHeaders(&ncch, NULL, &exefs, &file, cryptofix);
         }
     }
 
@@ -779,24 +762,24 @@ u32 AttemptFixNcch(int contentNum, const char* path, u32 offset, u32 size, bool 
     // base hash check for extheader
     if (ncch.size_exthdr > 0) {
         fvx_lseek(&file, offset + NCCH_EXTHDR_OFFSET);
-        ver_exthdr = CheckFixNcchHash(ncch.hash_exthdr, &file, 0x400, offset, &ncch, NULL, offset + NCCH_EXTHDR_OFFSET, &wstr, log, autoskip);
+        ver_exthdr = CheckFixNcchHash(ncch.hash_exthdr, &file, 0x400, offset, &ncch, NULL, offset + NCCH_EXTHDR_OFFSET, wstr, log, autoskip);
     }
 
     // base hash check for exefs
     if (ncch.size_exefs > 0) {
         fvx_lseek(&file, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT));
-        ver_exefs = CheckFixNcchHash(ncch.hash_exefs, &file, ncch.size_exefs_hash * NCCH_MEDIA_UNIT, offset, &ncch, &exefs, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT), &wstr, log, autoskip);
+        ver_exefs = CheckFixNcchHash(ncch.hash_exefs, &file, ncch.size_exefs_hash * NCCH_MEDIA_UNIT, offset, &ncch, &exefs, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT), wstr, log, autoskip);
     }
 
     // base hash check for romfs
     if (ncch.size_romfs > 0) {
         fvx_lseek(&file, offset + (ncch.offset_romfs * NCCH_MEDIA_UNIT));
-        ver_romfs = CheckFixNcchHash(ncch.hash_romfs, &file, ncch.size_romfs_hash * NCCH_MEDIA_UNIT, offset, &ncch, NULL, offset + (ncch.offset_romfs * NCCH_MEDIA_UNIT), &wstr, log, autoskip);
+        ver_romfs = CheckFixNcchHash(ncch.hash_romfs, &file, ncch.size_romfs_hash * NCCH_MEDIA_UNIT, offset, &ncch, NULL, offset + (ncch.offset_romfs * NCCH_MEDIA_UNIT), wstr, log, autoskip);
     }
 
     // thorough exefs verification (workaround for Process9)
     if (!ShowProgress(0, 0, path)) return 1;
-    if ((ncch.size_exefs > 0) && (memcmp(exthdr.name, "Process9", 8) != 0)) {
+    if ((ncch.size_exthdr > 0) && (ncch.size_exefs > 0) && (memcmp(exthdr.name, "Process9", 8) != 0)) {
         for (u32 i = 0; i < 10; i++) {
             DrawString(MAIN_SCREEN, "Verifying EXEFS", 120, 16, COLOR_STD_FONT, COLOR_STD_BG);
             WriteBadChunksCount(bad_chunks);
@@ -806,7 +789,7 @@ u32 AttemptFixNcch(int contentNum, const char* path, u32 offset, u32 size, bool 
             u8* hash = exefs.hashes[9 - i];
             if (!exefile->size) continue;
             fvx_lseek(&file, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT) + 0x200 + exefile->offset);
-            ver_exefs = CheckFixNcchHash(hash, &file, exefile->size, offset, &ncch, &exefs, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT) + 0x200 + exefile->offset, &wstr, log, autoskip);
+            ver_exefs |= CheckFixNcchHash(hash, &file, exefile->size, offset, &ncch, &exefs, offset + (ncch.offset_exefs * NCCH_MEDIA_UNIT) + 0x200 + exefile->offset, wstr, log, autoskip);
         }
     }
 
@@ -892,7 +875,7 @@ u32 AttemptFixNcch(int contentNum, const char* path, u32 offset, u32 size, bool 
                 WriteBadChunksCount(bad_chunks);
                 WritePartitionName(contentNum, offset);
 
-                ver_romfs = CheckFixNcchHash(lvl2_data + (i*0x20), &file, 1 << block_log, offset, &ncch, NULL, offset + offset_add, &wstr, log, autoskip);
+                ver_romfs = CheckFixNcchHash(lvl2_data + (i*0x20), &file, 1 << block_log, offset, &ncch, NULL, offset + offset_add, wstr, log, autoskip);
 
                 if (ver_romfs) {
                     break;
@@ -906,29 +889,10 @@ u32 AttemptFixNcch(int contentNum, const char* path, u32 offset, u32 size, bool 
         if (masterhash) free(masterhash);
         if (lvl1_data) free(lvl1_data);
         if (lvl2_data) free(lvl2_data);
-    } else {
+    } else if (ver_romfs) {
         fvx_close(&file);
         if (cryptofix) fvx_qwrite(path, &ncch, offset, sizeof(NcchHeader), NULL);
         return 2;
-    }
-
-    if (log) {
-        DsTime dstime;
-        get_dstime(&dstime);
-
-
-        while (!InitSDCardFS()) {
-            if (InputWait(1) & BUTTON_POWER) PowerOff();
-            DeinitSDCardFS();
-        }
-
-        char fileout[64];
-        snprintf(fileout, 64, "%s/fix_report_%02lX%02lX%02lX%02lX%02lX%02lX.txt", OUTPUT_PATH,
-            (u32) dstime.bcd_Y, (u32) dstime.bcd_M, (u32) dstime.bcd_D,
-            (u32) dstime.bcd_h, (u32) dstime.bcd_m, (u32) dstime.bcd_s);
-        FileSetData(fileout, dumpstr, wstr - dumpstr, 0, true);
-
-        free(dumpstr);
     }
 
     fvx_close(&file);
@@ -1038,7 +1002,7 @@ u32 VerifyNcchFile(const char* path, u32 offset, u32 size, bool sig_check) {
 
     // thorough exefs verification (workaround for Process9)
     if (!ShowProgress(0, 0, path)) return 1;
-    if ((ncch.size_exefs > 0) && (memcmp(exthdr.name, "Process9", 8) != 0)) {
+    if ((ncch.size_exthdr > 0) && (ncch.size_exefs > 0) && (memcmp(exthdr.name, "Process9", 8) != 0)) {
         for (u32 i = 0; !ver_exefs && (i < 10); i++) {
             ExeFsFileHeader* exefile = exefs.files + i;
             u8* hash = exefs.hashes[9 - i];
@@ -1162,6 +1126,16 @@ u32 AttemptFixNcsdFile(const char* path, bool log, bool autoskip) {
     
     bad_chunks = 0;
 
+    char* dumpstr = NULL;
+    char* wstr = NULL;
+    if (log) {
+        dumpstr = malloc(STD_BUFFER_SIZE);
+        if (!dumpstr) return 1;
+        wstr = dumpstr;
+        wstr += sprintf(wstr, "CORRUPTION FIX LOG ON %s\n", path);
+    }
+
+    int ret = 0;
     // validate NCSD contents
     for (u32 i = 0; i < 8; i++) {
         NcchPartition* partition = ncsd.partitions + i;
@@ -1171,17 +1145,36 @@ u32 AttemptFixNcsdFile(const char* path, bool log, bool autoskip) {
 
         DrawString(MAIN_SCREEN, "Attempting fix, please wait...", 0, 20, COLOR_STD_FONT, COLOR_STD_BG);
 
-        int ret = AttemptFixNcch(i, path, offset, size, log, autoskip);
+        ret = AttemptFixNcch(i, path, offset, size, (log ? &wstr : NULL), autoskip);
 
         if (ret == 2) {
             ShowPrompt(false, "Fix failed. Essential parts of the image are bad.\nTry the following: select this file again,\nhold SELECT and try to copy to gm/out.\nRun this again afterwards.");
-            return 2;
+            break;
         } else if (ret != 0) {
             ShowPrompt(false, "%s\nContent%lu (%08lX@%08lX):\nFixing failed", pathstr, i, size, offset);
-            return 1;
+            break;
         }
     }
-    return 0;
+
+    if (log) {
+        DsTime dstime;
+        get_dstime(&dstime);
+
+        while (!InitSDCardFS()) {
+            if (InputWait(1) & BUTTON_POWER) PowerOff();
+            DeinitSDCardFS();
+        }
+
+        char fileout[64];
+        snprintf(fileout, 64, "%s/fix_report_%02lX%02lX%02lX%02lX%02lX%02lX.txt", OUTPUT_PATH,
+            (u32) dstime.bcd_Y, (u32) dstime.bcd_M, (u32) dstime.bcd_D,
+            (u32) dstime.bcd_h, (u32) dstime.bcd_m, (u32) dstime.bcd_s);
+        FileSetData(fileout, dumpstr, wstr - dumpstr, 0, true);
+
+        free(dumpstr);
+    }
+
+    return ret;
 }
 
 u32 VerifyNcsdFile(const char* path, bool sig_check) {
