@@ -1630,17 +1630,21 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
 
         bool log = false;
         bool autoskip = false;
+        
+        bool YHeld = CheckButton(BUTTON_Y);
+        bool XHeld = CheckButton(BUTTON_X);
+        bool SelectHeld = CheckButton(BUTTON_SELECT);
 
-        if (CheckButton(BUTTON_Y)) {
+        if (CheckButton(YHeld)) {
             ShowPrompt(false, "Logging has been turned on.");
             log = true;
         }
-        if (CheckButton(BUTTON_X)) {
+        if (CheckButton(XHeld)) {
             ShowPrompt(false, "Autoskip is on.");
             autoskip = true;
         }
 
-        if (CheckButton(BUTTON_SELECT)) {
+        if (CheckButton(SelectHeld)) {
             if (ShowPrompt(true, "This will run refresh on EVERY read. \nOnly use this option for broken cartridges. \nAre you SURE you want to do this?"))
                 refresh_call_every = 0;
             else
