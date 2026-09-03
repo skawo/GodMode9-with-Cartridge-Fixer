@@ -109,6 +109,14 @@ If verification still fails, run **Fix cartridge corruption** again. Some cartri
 
 ---
 
+## Options
+
+When selecting **Fix cartridge corruption** buttons can be held to adjust the fixer behaviour:
+
+- Hold X to automatically skip chunks after 500 retries.
+- Hold Y to save a log of unfixable blocks to SD card
+- Hold SELECT to perform a refresh on every block read (not recommended)
+
 ## Tracking Repair Progress
 
 To determine whether the cartridge is improving, observe the "unfixable chunks" number. This number is increased whenever a chunk cannot be fixed, or whenever it's manually skipped.
