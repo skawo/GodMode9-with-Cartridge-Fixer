@@ -23,6 +23,7 @@
 #define PART_PATH       "D:/partitionA.bin"
 
 int bad_chunks = 0;
+int fixed_chunks = 0;
 
 u32 GetCbcBlocks(FIL* file, void* buffer, u64 offset, u32 count, u8* titlekey, u8* forced_iv) {
     u8 iv[16] __attribute__((aligned(4)));
@@ -89,7 +90,6 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
     u8 lasthash[32] = { 0 };
     char tempstr[64];
     char hash_str[32+1];
-    char exp_hash_str[32+1];
     extern bool force_refresh;
 
     u8* buffer = (u8*) malloc(STD_BUFFER_SIZE);
@@ -134,8 +134,8 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
         DrawString(MAIN_SCREEN, hash_str, pos_x, pos_y + 74, COLOR_STD_FONT, COLOR_STD_BG);
 
         DrawString(MAIN_SCREEN, "Expected:", pos_x, pos_y + 94, COLOR_STD_FONT, COLOR_STD_BG);
-        snprintf(exp_hash_str, 32+1, "%016llX%016llX", getbe64(expected + 16), getbe64(expected + 24));
-        DrawString(MAIN_SCREEN, exp_hash_str, pos_x, pos_y + 104, COLOR_STD_FONT, COLOR_STD_BG);
+        snprintf(hash_str, 32+1, "%016llX%016llX", getbe64(expected + 16), getbe64(expected + 24));
+        DrawString(MAIN_SCREEN, hash_str, pos_x, pos_y + 104, COLOR_STD_FONT, COLOR_STD_BG);
 
         hash_match = !memcmp(hash, expected, 32);
 
@@ -222,8 +222,12 @@ u32 CheckFixNcchHash(u8* expected, FIL* file, u32 size_data, u32 offset_ncch, Nc
 
     free(buffer);
 
-    if (was_bad && log) {
-        *outstr += sprintf(*outstr, "%x\n", (unsigned int) offset_back);
+    if (was_bad) {
+        
+        ++fixed_chunks;  
+        
+        if (log)
+            *outstr += sprintf(*outstr, "%x\n", (unsigned int) offset_back);
     }
 
     force_refresh = false;
@@ -672,14 +676,18 @@ u32 VerifyTmdContent(const char* path, u64 offset, TmdContentChunk* chunk, const
     return memcmp(hash, expected, 32);
 }
 
-void WriteBadChunksCount(int chunkCount)
+void PrintChunkCounts()
 {
-    char chunksBadStr[30];
-    sprintf(chunksBadStr, "Unfixable chunks: %d", chunkCount);
-    DrawString(MAIN_SCREEN, chunksBadStr, 120, 32, COLOR_STD_FONT, COLOR_STD_BG);    
+    char chunksStr[30];
+    
+    sprintf(chunksStr, "Unfixable chunks: %d", bad_chunks);
+    DrawString(MAIN_SCREEN, chunksStr, 120, 32, COLOR_STD_FONT, COLOR_STD_BG);    
+    sprintf(chunksStr, "Fixed chunks: %d", fixed_chunks);
+    DrawString(MAIN_SCREEN, chunksStr, 120, 48, COLOR_STD_FONT, COLOR_STD_BG);        
+    
 }
 
-void WritePartitionName(int contentNum, u32 offset)
+void PrintPartitionName(int contentNum, u32 offset)
 {
     char partNameStr[60];
     sprintf(partNameStr, "Content %d (%08lX)", contentNum, offset);
@@ -698,8 +706,8 @@ u32 AttemptFixNcch(int contentNum, const char* path, u32 offset, u32 size, char*
     char pathstr[UTF_BUFFER_BYTESIZE(32)];
     TruncateString(pathstr, path, 32, 8);
 
-    WriteBadChunksCount(bad_chunks);
-    WritePartitionName(contentNum, offset);
+    PrintChunkCounts();
+    PrintPartitionName(contentNum, offset);
 
     DrawString(MAIN_SCREEN, "File open...", 120, 16, COLOR_STD_FONT, COLOR_STD_BG);
 
@@ -782,8 +790,8 @@ u32 AttemptFixNcch(int contentNum, const char* path, u32 offset, u32 size, char*
     if ((ncch.size_exthdr > 0) && (ncch.size_exefs > 0) && (memcmp(exthdr.name, "Process9", 8) != 0)) {
         for (u32 i = 0; i < 10; i++) {
             DrawString(MAIN_SCREEN, "Verifying EXEFS", 120, 16, COLOR_STD_FONT, COLOR_STD_BG);
-            WriteBadChunksCount(bad_chunks);
-            WritePartitionName(contentNum, offset);
+            PrintChunkCounts();
+            PrintPartitionName(contentNum, offset);
 
             ExeFsFileHeader* exefile = exefs.files + i;
             u8* hash = exefs.hashes[9 - i];
@@ -872,8 +880,8 @@ u32 AttemptFixNcch(int contentNum, const char* path, u32 offset, u32 size, char*
             fvx_lseek(&file, offset + offset_add);
             for (u32 i = 0; i < n_blocks; i++) {
                 DrawString(MAIN_SCREEN, "Running thorough ROMFS refresh.", 120, 16, COLOR_STD_FONT, COLOR_STD_BG);
-                WriteBadChunksCount(bad_chunks);
-                WritePartitionName(contentNum, offset);
+                PrintChunkCounts();
+                PrintPartitionName(contentNum, offset);
 
                 ver_romfs = CheckFixNcchHash(lvl2_data + (i*0x20), &file, 1 << block_log, offset, &ncch, NULL, offset + offset_add, wstr, log, autoskip);
 
@@ -1125,6 +1133,7 @@ u32 AttemptFixNcsdFile(const char* path, bool log, bool autoskip) {
     }
     
     bad_chunks = 0;
+    fixed_chunks = 0;
 
     char* dumpstr = NULL;
     char* wstr = NULL;

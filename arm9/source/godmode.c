@@ -47,6 +47,7 @@
 
 extern int refresh_call_every;
 extern int bad_chunks;
+extern int fixed_chunks;
 
 typedef struct {
     char path[256];
@@ -156,7 +157,7 @@ u32 SplashInit(const char* modestr) {
         "--------------------------------", "https://github.com/d0k3/GodMode9",
         "Releases:", "https://github.com/d0k3/GodMode9/releases/", // this won't fit with a 8px width font
         "Hourlies:", "https://d0k3.secretalgorithm.com/");
-    DrawStringF(TOP_SCREEN, 0, 0, COLOR_STD_FONT, COLOR_STD_BG, "Cartridge Fixer Fork v1.9 by Skawo. \nThanks to Pleasehelpme2, BreadLoaf, themmj, glauberlima.");
+    DrawStringF(TOP_SCREEN, 0, 0, COLOR_STD_FONT, COLOR_STD_BG, "Cartridge Fixer Fork v1.91 by Skawo. \nThanks to Pleasehelpme2, BreadLoaf, themmj, glauberlima.");
     DrawStringF(BOT_SCREEN, pos_xu, pos_yu, COLOR_STD_FONT, COLOR_STD_BG, "%s", loadstr);
     DrawStringF(BOT_SCREEN, pos_xb, pos_yu, COLOR_STD_FONT, COLOR_STD_BG, "built: " DBUILTL);
 
@@ -1645,7 +1646,7 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
         }
 
         if (CheckButton(SelectHeld)) {
-            if (ShowPrompt(true, "This will run refresh on EVERY read. \nOnly use this option for broken cartridges. \nAre you SURE you want to do this?"))
+            if (ShowPrompt(true, "This will run refresh on EVERY read.\nOnly use this option for broken cartridges.\nAre you SURE you want to do this?"))
                 refresh_call_every = 0;
             else
                 return 0;
@@ -1653,9 +1654,9 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
 
         if (AttemptFixNcsdFile(file_path, log, autoskip) == 0) {
             if (!bad_chunks)
-                ShowPrompt(false, "Finished with 0 unfixable chunks. Run verify.");
+                ShowPrompt(false, "Finished.\n\n%d fixed chunks,\n0 unfixable chunks.\n\nRun verify.", bad_chunks, fixed_chunks);
             else
-                ShowPrompt(false, "Finished with %d unfixable chunks.", bad_chunks);
+                ShowPrompt(false, "Finished.\n\n%d fixed chunks,\n%d unfixable chunks.", bad_chunks, fixed_chunks);
         }
         else
             ShowPrompt(false, "Corruption fixer failed.");
