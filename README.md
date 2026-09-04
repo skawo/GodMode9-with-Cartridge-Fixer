@@ -1,12 +1,19 @@
 <h1>Nintendo 3DS Cartridge Fixer</h1>
 
-<h2>Warning: This is EXPERIMENTAL software. This might not fix your cartridge, and while it shouldn't make them worse, there are no guarantees.</h2>
-
-<h2>4.09.2026 Update: New research indicates that ensure the cartridges don't go bad again in short order, it's a good idea to keep them powered up after the fixing/verification process for a few hours on the Home Menu screen in Sleep Mode.</h2>
+<h2>September 4, 2026 Update: New research indicates that leaving the cartridge on the Home Menu screen in Sleep Mode might be enough to fix it, and this tool is actually not necessary. Please try the following to help the research effort:
+<br/><br/>
+1. Run the "Verify" function to ensure the cartridge is corrupted.<br/>
+2. Run "Fix cartridge corruption", and note the amount of "Unfixable blocks" after one pass.<br/>
+3. Exit the program, and go back to the Home Menu. While on the Home Menu, activate sleep mode, and leave the cartridge inserted into the console for 24 hours.<br/>
+4. Run "Fix cartridge corruption" again. Please report the difference in the number of "Unfixable blocks" in the <a href="https://gbatemp.net/threads/corrupted-cartridge-fixer-release.628539/">GBATemp thread.</a>
+<br/><br/>   
+Feel free to continue using the cartridge fixer if the unfixable block number did not decrease significantly. If it had, leave the cartridge in sleep mode for another 24 hours, then check again.</h2>
 
 3DS cartridges contain a NAND flash chip, which, if unused for long periods of time, may become corrupted. Thankfully, the controller chip has an error correction function which can restore the corrupted data. 
 
 This fork of GodMode 9 has been edited to make more extensive use of this functionality; the program can now scan the cartridge for errors, and if they're found, will re-read the offending chunk of data while running the refresh function until it hopefully corrects itself. If your cartridge appears to load infinitely, or frequently crashes from non-gameplay-related reasons, this tool has a chance to fix it.
+
+<h2>Warning: This is EXPERIMENTAL software. This might not fix your cartridge, and while it shouldn't make them worse, there are no guarantees.</h2>
 
 ## Usage
 
