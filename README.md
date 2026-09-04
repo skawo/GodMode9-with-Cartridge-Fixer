@@ -4,7 +4,7 @@
 <br/><br/>
 1. Run the "Verify" function to ensure the cartridge is corrupted.<br/>
 2. Exit the program, and go back to the Home Menu. While on the Home Menu, activate sleep mode, and leave the cartridge inserted into the console for 24 hours.<br/>
-4. Run "Verify" again. Please report whether the cartridge now verifies in the <a href="https://gbatemp.net/threads/corrupted-cartridge-fixer-release.628539/">GBATemp thread.</a>
+3. Run "Verify" again. Please report whether the cartridge now verifies in the <a href="https://gbatemp.net/threads/corrupted-cartridge-fixer-release.628539/">GBATemp thread.</a>
 <br/><br/>   
 Feel free to use the cartridge fixer function if this process did not make the cartridge verify successfully.</h2>
 
