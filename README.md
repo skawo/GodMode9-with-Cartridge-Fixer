@@ -107,6 +107,8 @@ If verification succeeds, the repair is complete. **Keep your cartridge in the c
 
 If verification still fails, run **Fix cartridge corruption** again. Some cartridges require multiple repair passes before they become stable.
 
+If verification persistently fails, **try leaving the cartridge inserted into the console on the Home Menu for several hours, then try re-verifying.**
+
 ---
 
 ## Options
