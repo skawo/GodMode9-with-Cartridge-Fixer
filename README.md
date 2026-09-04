@@ -2,6 +2,8 @@
 
 <h2>Warning: This is EXPERIMENTAL software. This might not fix your cartridge, and while it shouldn't make them worse, there are no guarantees.</h2>
 
+<h2>4.09.2026 Update: New research indicates that ensure the cartridges don't go bad again in short order, it's a good idea to keep them powered up after the fixing/verification process for a few hours on the Home Menu screen in Sleep Mode.</h2>
+
 3DS cartridges contain a NAND flash chip, which, if unused for long periods of time, may become corrupted. Thankfully, the controller chip has an error correction function which can restore the corrupted data. 
 
 This fork of GodMode 9 has been edited to make more extensive use of this functionality; the program can now scan the cartridge for errors, and if they're found, will re-read the offending chunk of data while running the refresh function until it hopefully corrects itself. If your cartridge appears to load infinitely, or frequently crashes from non-gameplay-related reasons, this tool has a chance to fix it.
@@ -103,11 +105,11 @@ If you're experiencing an issue while playing the game, then it's not related to
    Verify
    ```
 
-If verification succeeds, the repair is complete. **Keep your cartridge in the console in the Home Menu for a few additional hours to let it fully stabilize.**
+If verification succeeds, the repair is complete. **Keep your cartridge in the console on the Home Menu in Sleep Mode for a few additional hours to let it fully stabilize.**
 
 If verification still fails, run **Fix cartridge corruption** again. Some cartridges require multiple repair passes before they become stable.
 
-If verification persistently fails, **try leaving the cartridge inserted into the console on the Home Menu for several hours, then try re-verifying.**
+If verification persistently fails, **try leaving the cartridge inserted into the console on the Home Menu in Sleep Mode for several hours, then try re-verifying.**
 
 ---
 
