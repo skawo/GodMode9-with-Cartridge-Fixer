@@ -111,7 +111,7 @@ If you're experiencing an issue while playing the game, then it's not related to
    Verify
    ```
 
-If verification succeeds, the repair is complete. **Keep your cartridge in the console on the Home Menu in Sleep Mode for a few additional hours to let it fully stabilize.**
+If verification succeeds, the repair is complete. <h2>Keep your cartridge in the console on the Home Menu in Sleep Mode for a few additional hours to let it fully stabilize.</h2>
 
 If verification still fails, run **Fix cartridge corruption** again. Some cartridges require multiple repair passes before they become stable.
 
