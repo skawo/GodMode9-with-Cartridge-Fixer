@@ -174,10 +174,10 @@ Less often mentioned, but still pop up quite frequently:
 - Tomodachi Life
 - Yokai Watch
 
-
 <b>Credits:</b><br>
 Skawo - Programming<br>
 themmj - Rebasing to newest GodMode9<br>
+glauberlima - Bug fixes<br>
 RoadrunnerWMC - Help<br>
 Pleasehelpme2 - Testing<br>
 BreadLoaf - Testing<br>
