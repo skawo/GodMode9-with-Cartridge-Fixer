@@ -9,6 +9,8 @@
 #include "hid.h"
 #include "game.h"
 #include "gamecart.h"
+#include "command_ctr.h"
+#include "timer.h"
 
 #define _MAX_FOR_DEPTH  16
 
@@ -733,6 +735,30 @@ static int internalfs_key_dump(lua_State* L) {
     return 0;
 }
 
+static int internalfs_cart_refresh(lua_State* L) {
+    bool extra = CheckLuaArgCountPlusExtra(L, 0, "_fs.cart_refresh");
+    const char* path = extra ? luaL_checkstring(L, 1) : NULL;
+
+    CartData* cdata = (CartData*) malloc(sizeof(CartData));
+    if (!cdata) {
+        return luaL_error(L, "out of memory");
+    }
+
+    if (path) {
+        ShowProgress(0, 1, path);
+        u64 timer = timer_start();
+        while (timer_msec(timer) < 50);
+        ShowProgress(1, 1, path);
+    }
+
+    bool ret = (InitCartRead(cdata) == 0) && (cdata->cart_type & CART_CTR);
+    if (ret) CTR_Refresh();
+
+    free(cdata);
+    lua_pushboolean(L, ret);
+    return 1;
+}
+
 static int internalfs_cart_dump(lua_State* L) {
     bool extra = CheckLuaArgCountPlusExtra(L, 2, "_fs.cart_dump");
     const char* path = luaL_checkstring(L, 1);
@@ -812,6 +838,7 @@ static const luaL_Reg internalfs_lib[] = {
     {"create_dbs", internalfs_create_dbs},
     {"key_dump", internalfs_key_dump},
     {"cart_dump", internalfs_cart_dump},
+    {"cart_refresh", internalfs_cart_refresh},
     {NULL, NULL}
 };
 

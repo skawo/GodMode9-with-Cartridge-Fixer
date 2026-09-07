@@ -33,6 +33,7 @@ fs.fix_cmacs = _fs.fix_cmacs
 fs.create_dbs = _fs.create_dbs
 fs.key_dump = _fs.key_dump
 fs.cart_dump = _fs.cart_dump
+fs.cart_refresh = _fs.cart_refresh
 
 -- compatibility
 function os.remove(path)

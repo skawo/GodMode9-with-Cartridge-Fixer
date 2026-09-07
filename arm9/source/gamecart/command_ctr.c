@@ -21,6 +21,17 @@ static void CTR_CmdC5()
     CTR_SendCommand(c5_cmd, 0, 1, 0x100002C, NULL);
 }
 
+void CTR_Refresh()
+{
+    refresh_count++;
+    CTR_CmdC5();
+
+    char tempstr[64];
+    snprintf(tempstr, 64, "%d", refresh_count);
+    DrawString(MAIN_SCREEN, "Refresh count:", 0, 0, COLOR_STD_FONT, COLOR_STD_BG);
+    DrawString(MAIN_SCREEN, tempstr, 0, 10, COLOR_STD_FONT, COLOR_STD_BG);
+}
+
 void CTR_CmdReadData(u32 sector, u32 length, u32 blocks, void* buffer)
 {
     if(read_count++ >= refresh_call_every || force_refresh)
