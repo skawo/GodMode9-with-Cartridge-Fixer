@@ -1636,16 +1636,16 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
         bool XHeld = CheckButton(BUTTON_X);
         bool SelectHeld = CheckButton(BUTTON_SELECT);
 
-        if (CheckButton(YHeld)) {
+        if (YHeld) {
             ShowPrompt(false, "Logging has been turned on.");
             log = true;
         }
-        if (CheckButton(XHeld)) {
+        if (XHeld) {
             ShowPrompt(false, "Autoskip is on.");
             autoskip = true;
         }
 
-        if (CheckButton(SelectHeld)) {
+        if (SelectHeld) {
             if (ShowPrompt(true, "This will run refresh on EVERY read.\nOnly use this option for broken cartridges.\nAre you SURE you want to do this?"))
                 refresh_call_every = 0;
             else
@@ -1654,7 +1654,7 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
 
         if (AttemptFixNcsdFile(file_path, log, autoskip) == 0) {
             if (!bad_chunks)
-                ShowPrompt(false, "Finished.\n\n%d fixed chunks,\n0 unfixable chunks.\n\nRun verify.", bad_chunks, fixed_chunks);
+                ShowPrompt(false, "Finished.\n\n%d fixed chunks,\n0 unfixable chunks.\n\nRun verify.", fixed_chunks);
             else
                 ShowPrompt(false, "Finished.\n\n%d fixed chunks,\n%d unfixable chunks.", bad_chunks, fixed_chunks);
         }

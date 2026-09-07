@@ -33,7 +33,7 @@ u32 InitVCartDrive(void) {
 }
 
 bool ReadVCartDir(VirtualFile* vfile, VirtualDir* vdir) {
-    if (vdir->index < 0)
+    if (vdir->index < 0 && !cart_init)
         InitVCartDrive();
     if (!cart_init) return false;
 
