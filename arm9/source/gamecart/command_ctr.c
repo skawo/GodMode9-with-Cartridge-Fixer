@@ -13,8 +13,6 @@ static int refresh_count = 0;
 int refresh_call_every = 10000;
 bool force_refresh = false;
 
-// #define HUNDRED_REFRESHES
-
 static void CTR_CmdC5()
 {
     static const u32 c5_cmd[4] = { 0xC5000000, 0x00000000, 0x00000000, 0x00000000 };
@@ -36,17 +34,8 @@ void CTR_CmdReadData(u32 sector, u32 length, u32 blocks, void* buffer)
 {
     if(read_count++ >= refresh_call_every || force_refresh)
     {
-
-#       ifdef HUNDRED_REFRESHES
-        for (int i = 0; i < 100; i++)
-        {
-            refresh_count += 99;
-#       endif
-            refresh_count++;
-            CTR_CmdC5();
-#       ifdef HUNDRED_REFRESHES
-        }
-#       endif
+        refresh_count++;
+        CTR_CmdC5();
 
         read_count = 0;
 
