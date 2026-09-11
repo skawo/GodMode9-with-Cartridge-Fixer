@@ -23,7 +23,13 @@ This fork of GodMode 9 has been edited to make more extensive use of this functi
    ```text
    SD:/luma/payloads/
    ```
+2. Download the `.lua` file from the **Releases** section and copy it to:
 
+   ```text
+   SD:/gm9/luascripts
+   ```
+   (Create the folder if it doesn't exist)
+   
 3. Insert the SD card into the 3DS, then power it on while holding **START**.
 
 4. If a payload menu appears, select **GodMode Refresh firm**.  
@@ -111,7 +117,16 @@ If you're experiencing an issue while playing the game, then it's not related to
    Verify
    ```
 
-If verification succeeds, the repair is complete. <h2>Keep your cartridge in the console on the Home Menu in Sleep Mode for a few additional hours to let it fully stabilize.</h2>
+If verification succeeds, the repair is complete. To help the cartridge stays fixed:
+
+1. Return to the main GodMode9 screen and press HOME.
+2. Select
+
+   ```text
+   Lua Scripts
+   ```
+3. Select the CartRefresher lua script, and follow the prompts on-screen.
+
 
 If verification still fails, run **Fix cartridge corruption** again. Some cartridges require multiple repair passes before they become stable.
 
