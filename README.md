@@ -1,13 +1,5 @@
 <h1>Nintendo 3DS Cartridge Fixer</h1>
 
-<h2>September 4, 2026 Update: New research indicates that leaving the cartridge on the Home Menu screen in Sleep Mode might be enough to fix it, and this tool is actually not necessary. Please try the following to help the research effort:
-<br/><br/>
-1. Run the "Verify" function to ensure the cartridge is corrupted.<br/>
-2. Exit the program, and go back to the Home Menu. While on the Home Menu, activate sleep mode, and leave the cartridge inserted into the console for 24 hours.<br/>
-3. Run "Verify" again. Please report whether the cartridge now verifies in the <a href="https://gbatemp.net/threads/corrupted-cartridge-fixer-release.628539/">GBATemp thread.</a>
-<br/><br/>   
-Feel free to use the cartridge fixer function if this process did not make the cartridge verify successfully.</h2>
-
 3DS cartridges contain a NAND flash chip, which, if unused for long periods of time, may become corrupted. Thankfully, the controller chip has an error correction function which can restore the corrupted data. 
 
 This fork of GodMode 9 has been edited to make more extensive use of this functionality; the program can now scan the cartridge for errors, and if they're found, will re-read the offending chunk of data while running the refresh function until it hopefully corrects itself. If your cartridge appears to load infinitely, or frequently crashes from non-gameplay-related reasons, this tool has a chance to fix it.
@@ -130,7 +122,7 @@ If verification succeeds, the repair is complete. To help the cartridge stays fi
 
 If verification still fails, run **Fix cartridge corruption** again. Some cartridges require multiple repair passes before they become stable.
 
-If verification persistently fails, **try leaving the cartridge inserted into the console on the Home Menu in Sleep Mode for several hours, then try re-verifying.**
+If verification persistently fails, and fixed chunk/unfixable chunk plateaus, **try leaving the cartridge inserted into the console on the Home Menu in Sleep Mode for a day, then try running the process again.**
 
 ---
 
