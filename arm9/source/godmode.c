@@ -158,7 +158,7 @@ u32 SplashInit(const char* modestr) {
         "--------------------------------", "https://github.com/d0k3/GodMode9",
         "Releases:", "https://github.com/d0k3/GodMode9/releases/", // this won't fit with a 8px width font
         "Hourlies:", "https://d0k3.secretalgorithm.com/");
-    DrawStringF(TOP_SCREEN, 0, 0, COLOR_STD_FONT, COLOR_STD_BG, "Cartridge Fixer Fork v1.92 by Skawo. \nThanks to Pleasehelpme2, BreadLoaf, themmj, glauberlima, voltar324.%s",
+    DrawStringF(TOP_SCREEN, 0, 0, COLOR_STD_FONT, COLOR_STD_BG, "Cartridge Fixer Fork v2.00 by Skawo, glauberlima. \nThanks to Pleasehelpme2, BreadLoaf, themmj, voltar324.%s",
 #ifdef FIXER_SIM
         "\n*** SIM BUILD ***"
 #else
