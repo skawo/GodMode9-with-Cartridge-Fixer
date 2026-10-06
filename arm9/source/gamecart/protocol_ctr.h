@@ -36,7 +36,7 @@
 
 #define CTRKEY_PARAM 0x1000000u
 
-void CTR_SetSecKey(u32 value);
-void CTR_SetSecSeed(const u32* seed, bool flag);
+bool CTR_SetSecKey(u32 value);
+bool CTR_SetSecSeed(const u32* seed, bool flag);
 
-void CTR_SendCommand(const u32 command[4], u32 pageSize, u32 blocks, u32 latency, void* buffer);
+bool CTR_SendCommand(const u32 command[4], u32 pageSize, u32 blocks, u32 latency, void* buffer);

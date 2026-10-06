@@ -13,29 +13,39 @@ static int refresh_count = 0;
 int refresh_call_every = 10000;
 bool force_refresh = false;
 
-static void CTR_CmdC5()
+static bool CTR_CmdC5()
 {
     static const u32 c5_cmd[4] = { 0xC5000000, 0x00000000, 0x00000000, 0x00000000 };
-    CTR_SendCommand(c5_cmd, 0, 1, 0x100002C, NULL);
+    return CTR_SendCommand(c5_cmd, 0, 1, 0x100002C, NULL);
 }
 
-void CTR_Refresh()
+void CTR_ResetRefreshCount()
+{
+    refresh_count = 0;
+    read_count = 0;
+}
+
+bool CTR_Refresh()
 {
     refresh_count++;
-    CTR_CmdC5();
+    if (!CTR_CmdC5()) return false;
 
     char tempstr[64];
     snprintf(tempstr, 64, "%d", refresh_count);
     DrawString(MAIN_SCREEN, "Refresh count:", 0, 0, COLOR_STD_FONT, COLOR_STD_BG);
     DrawString(MAIN_SCREEN, tempstr, 0, 10, COLOR_STD_FONT, COLOR_STD_BG);
+    return true;
 }
 
-void CTR_CmdReadData(u32 sector, u32 length, u32 blocks, void* buffer)
+bool CTR_CmdReadData(u32 sector, u32 length, u32 blocks, void* buffer)
 {
     if(read_count++ >= refresh_call_every || force_refresh)
     {
         refresh_count++;
-        CTR_CmdC5();
+        if (!CTR_CmdC5()) {
+            read_count = 0;
+            return false;
+        }
 
         read_count = 0;
 
@@ -50,7 +60,7 @@ void CTR_CmdReadData(u32 sector, u32 length, u32 blocks, void* buffer)
         (u32)((sector << 9) & 0xFFFFFFFF),
         0x00000000, 0x00000000
     };
-    CTR_SendCommand(read_cmd, length, blocks, 0x104822C, buffer); // Clock divider 5 (13.4 MHz). Same as Process9.
+    return CTR_SendCommand(read_cmd, length, blocks, 0x104822C, buffer); // Clock divider 5 (13.4 MHz). Same as Process9.
 }
 
 void CTR_CmdReadHeader(void* buffer)

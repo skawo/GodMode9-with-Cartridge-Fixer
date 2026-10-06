@@ -7,30 +7,69 @@
 #include "protocol_ctr.h"
 
 #include "protocol.h"
+#include "timer.h"
 #ifdef VERBOSE_COMMANDS
 #include "draw.h"
 #endif
 
-void CTR_SetSecKey(u32 value) {
-    REG_CTRCARDSECCNT |= ((value & 3) << 8) | 4;
-    while (!(REG_CTRCARDSECCNT & 0x4000));
+// Upper bound for a single CTR card command. A 1MB transfer at 13.4 MHz takes
+// roughly 0.6s, so this is generous. It exists so a dead/failing cartridge can
+// no longer spin the CPU forever (which froze the screen and ignored B/Y).
+#define CTR_CMD_TIMEOUT_MS 5000
+
+// Stall watchdog. `base` is restarted whenever forward progress is observed, so
+// a slow-but-progressing transfer is never aborted while a genuine stall (no
+// progress) still trips after CTR_CMD_TIMEOUT_MS.
+typedef struct {
+    u64 base;
+    u32 spins;
+    u32 last_count;
+} CtrTimeout;
+
+static inline bool ctr_timeout_hit(CtrTimeout* t, u32 count) {
+    if (t->spins++ & 0xFFF)
+        return false;
+    if (count != t->last_count) {
+        t->last_count = count;
+        t->base = timer_start();
+        return false;
+    }
+    u64 ms = timer_msec(t->base);
+    if (ms > 1000000) { // timer was reset / wrapped: re-arm, never false-trigger
+        t->base = timer_start();
+        return false;
+    }
+    return (ms >= CTR_CMD_TIMEOUT_MS);
 }
 
-void CTR_SetSecSeed(const u32* seed, bool flag) {
+bool CTR_SetSecKey(u32 value) {
+    REG_CTRCARDSECCNT |= ((value & 3) << 8) | 4;
+    CtrTimeout to = { timer_start(), 0, 0 };
+    while (!(REG_CTRCARDSECCNT & 0x4000)) {
+        if (ctr_timeout_hit(&to, to.last_count)) return false;
+    }
+    return true;
+}
+
+bool CTR_SetSecSeed(const u32* seed, bool flag) {
     REG_CTRCARDSECSEED = BSWAP32(seed[3]);
     REG_CTRCARDSECSEED = BSWAP32(seed[2]);
     REG_CTRCARDSECSEED = BSWAP32(seed[1]);
     REG_CTRCARDSECSEED = BSWAP32(seed[0]);
     REG_CTRCARDSECCNT |= 0x8000;
 
-    while (!(REG_CTRCARDSECCNT & 0x4000));
+    CtrTimeout to = { timer_start(), 0, 0 };
+    while (!(REG_CTRCARDSECCNT & 0x4000)) {
+        if (ctr_timeout_hit(&to, to.last_count)) return false;
+    }
 
     if (flag) {
         (*(vu32*)0x1000400C) = 0x00000001; // Enable cart command encryption?
     }
+    return true;
 }
 
-void CTR_SendCommand(const u32 command[4], u32 pageSize, u32 blocks, u32 latency, void* buffer)
+bool CTR_SendCommand(const u32 command[4], u32 pageSize, u32 blocks, u32 latency, void* buffer)
 {
 #ifdef VERBOSE_COMMANDS
     Debug("C> %08X %08X %08X %08X", command[0], command[1], command[2], command[3]);
@@ -95,6 +134,8 @@ void CTR_SendCommand(const u32 command[4], u32 pageSize, u32 blocks, u32 latency
 
     u32 count = 0;
     u32 cardCtrl = REG_CTRCARDCNT;
+    CtrTimeout to = { timer_start(), 0, 0 };
+    bool timed_out = false;
 
     if(useBuf32)
     {
@@ -105,6 +146,9 @@ void CTR_SendCommand(const u32 command[4], u32 pageSize, u32 blocks, u32 latency
                 u32 data = REG_CTRCARDFIFO;
                 *pbuf32++ = data;
                 count += 4;
+            } else if (ctr_timeout_hit(&to, count)) {
+                timed_out = true;
+                break;
             }
         }
     }
@@ -121,6 +165,9 @@ void CTR_SendCommand(const u32 command[4], u32 pageSize, u32 blocks, u32 latency
                 pbuf[3] = (unsigned char) (data >> 24);
                 pbuf += sizeof (unsigned int);
                 count += 4;
+            } else if (ctr_timeout_hit(&to, count)) {
+                timed_out = true;
+                break;
             }
         }
     }
@@ -133,24 +180,45 @@ void CTR_SendCommand(const u32 command[4], u32 pageSize, u32 blocks, u32 latency
                 u32 data = REG_CTRCARDFIFO;
                 (void)data;
                 count += 4;
+            } else if (ctr_timeout_hit(&to, count)) {
+                timed_out = true;
+                break;
             }
         }
     }
 
     // if read is not finished, ds will not pull ROM CS to high, we pull it high manually
-    if( count != transferLength ) {
+    if( !timed_out && count != transferLength ) {
         // MUST wait for next data ready,
         // if ds pull ROM CS to high during 4 byte data transfer, something will mess up
         // so we have to wait next data ready
-        do { cardCtrl = REG_CTRCARDCNT; } while(!(cardCtrl & CTRCARD_DATA_READY));
+        // (re-read the register first: the value left by the transfer loop is stale)
+        do {
+            cardCtrl = REG_CTRCARDCNT;
+            if (!(cardCtrl & CTRCARD_DATA_READY) && ctr_timeout_hit(&to, to.last_count)) {
+                timed_out = true;
+                break;
+            }
+        } while (!(cardCtrl & CTRCARD_DATA_READY));
         // and this tiny delay is necessary
         ARM_WaitCycles(33 * 8);
-        // pull ROM CS high
+        // pull ROM CS high (this also aborts a stalled command)
         REG_CTRCARDCNT = 0x10000000;
         REG_CTRCARDCNT = CTRKEY_PARAM | CTRCARD_ACTIVATE | CTRCARD_nRESET;
     }
-    // wait rom cs high
-    do { cardCtrl = REG_CTRCARDCNT; } while( cardCtrl & CTRCARD_BUSY );
+    // wait rom cs high (bounded)
+    cardCtrl = REG_CTRCARDCNT;
+    while( cardCtrl & CTRCARD_BUSY ) {
+        cardCtrl = REG_CTRCARDCNT;
+        if (ctr_timeout_hit(&to, to.last_count)) {
+            timed_out = true;
+            break;
+        }
+    }
+    if (timed_out) {
+        // force-release the bus so the next command isn't issued while it's stuck
+        REG_CTRCARDCNT = 0x10000000;
+    }
     //lastCmd[0] = command[0];lastCmd[1] = command[1];
 
 #ifdef VERBOSE_COMMANDS
@@ -181,4 +249,9 @@ void CTR_SendCommand(const u32 command[4], u32 pageSize, u32 blocks, u32 latency
         }
     }
 #endif
+
+    // Only a genuine stall (watchdog) counts as a failure. A short/early-cleared
+    // transfer is the pre-existing "pull CS high" case that the original code
+    // always treated as success; flagging it broke secure-init and verify.
+    return !timed_out;
 }

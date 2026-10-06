@@ -83,11 +83,25 @@ endif
 ifdef NTRBOOT
     FTFLAGS  = -S spi-retail
     FTDFLAGS = -S spi-dev
-    FIRM     = $(OUTDIR)/$(FLAVOR)_ntr.firm
-    FIRMD    = $(OUTDIR)/$(FLAVOR)_ntr_dev.firm
+    FIRMSUF  = _ntr
 else
     FTFLAGS  = -S nand-retail
     FTDFLAGS = -S nand-dev
-    FIRM     = $(OUTDIR)/$(FLAVOR).firm
-    FIRMD    = $(OUTDIR)/$(FLAVOR)_dev.firm
+    FIRMSUF  =
 endif
+
+# Fixer fault-injection test build. Distinct output name AND build directory so a
+# SIM object can never be linked into a normal-named firmware by accident (make
+# does not track CFLAGS, so reusing the default build dir would be unsafe).
+# Build with: make FIXER_SIM=1 firm   (produces GodMode9_sim.firm)
+ifeq ($(FIXER_SIM),1)
+    CFLAGS  += -DFIXER_SIM
+    BUILD    = build_sim
+    SIMSUF   = _sim
+else
+    SIMSUF   =
+endif
+
+# Compose suffixes so NTRBOOT and FIXER_SIM never collide (e.g. GodMode9_ntr_sim.firm).
+FIRM  = $(OUTDIR)/$(FLAVOR)$(FIRMSUF)$(SIMSUF).firm
+FIRMD = $(OUTDIR)/$(FLAVOR)$(FIRMSUF)$(SIMSUF)_dev.firm

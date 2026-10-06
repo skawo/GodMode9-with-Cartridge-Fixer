@@ -13,11 +13,22 @@ all: $(TARGET).elf
 
 .PHONY: clean
 clean:
-	@rm -rf $(BUILD) $(TARGET).elf $(TARGET).dis $(TARGET).map
+	@rm -rf $(BUILD) $(TARGET).elf $(TARGET).dis $(TARGET).map $(CLEAN_EXTRA) $(FLAVORSTAMP)
 
-$(TARGET).elf: $(OBJECTS) $(OBJECTS_COMMON)
+# Flavor stamp: make does not track CFLAGS, and the linked/intermediate ELFs are
+# shared between build flavors. This stamp is rewritten whenever the flavor flag
+# (FIXER_SIM) changes, forcing a relink so a SIM ELF can never be reused by a
+# normal build (or vice versa).
+FLAVORSTAMP := .flavor
+.PHONY: .FORCE
+.FORCE:
+
+$(FLAVORSTAMP): .FORCE
+	@printf '%s' "$(FIXER_SIM)" | cmp -s - $@ || printf '%s' "$(FIXER_SIM)" > $@
+
+$(TARGET).elf: $(OBJECTS) $(OBJECTS_COMMON) $(FLAVORSTAMP)
 	@mkdir -p "$(@D)"
-	@$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)
+	@$(CC) $(LDFLAGS) $(OBJECTS) $(OBJECTS_COMMON) -o $@ $(LIBS)
 	@$(OBJDUMP) -S -h $@ > $@.dis
 
 $(BUILD)/%.cmn.o: $(COMMON_DIR)/%.c
@@ -35,4 +46,4 @@ $(BUILD)/%.o: $(SOURCE)/%.s
 	@echo "[$(PROCESSOR)] $<"
 	@$(CC) -c $(ASFLAGS) -o $@ $<
 
-include $(call rwildcard, $(BUILD), *.d)
+include $(call rwildcard, $(BUILD)/, *.d)

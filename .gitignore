@@ -48,11 +48,13 @@ desktop.ini
 /build
 /output
 /release
+.flavor
 
 # Build leftovers
 /data/README_internal.md
 
 # User additions
 /zzz_backup
+/notes
 /arm9/source/language.inl
 *.trf
