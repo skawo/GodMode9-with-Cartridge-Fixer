@@ -284,7 +284,7 @@ bool FixerUI_Preflight(const char* path, FixerConfig* cfg) {
         switch (sel) {
             case 0: h1 = "Skip bad blocks automatically at the"; h2 = "retry limit, else you get a prompt."; break;
             case 1: h1 = "Write gm9/out/fix_report_*.txt with"; h2 = "fixed/unfixable block offsets."; break;
-            case 2: h1 = "Refresh on EVERY read. Much slower;"; h2 = "only for badly broken carts."; break;
+            case 2: h1 = "Refresh on EVERY read. Much slower;"; h2 = "use ONLY as a last resort."; break;
             case 3: h1 = "Re-reads before offering to skip."; h2 = "Autoskip skips at this limit."; break;
             case 4: h1 = "Identical failed reads before a block"; h2 = "is declared unfixable."; break;
         }

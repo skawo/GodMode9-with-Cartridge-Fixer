@@ -117,7 +117,7 @@ void FixerCfg_Save(const FixerConfig* cfg) {
 // ...but failures far apart are noise (a slot with poor contact can time out now
 // and then over hours of retries), so the count is forgiven after this many
 // consecutive good reads. A cartridge alternating good/bad reads never gets there.
-#define FIXER_READ_FAILS_FORGIVE_AFTER 1000
+#define FIXER_READ_FAILS_FORGIVE_AFTER 200
 static bool cart_stopped = false;
 
 extern int refresh_call_every;
