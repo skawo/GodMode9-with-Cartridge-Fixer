@@ -61,10 +61,17 @@ clean:
 	@set -e; for elf in $(ELF); do \
 	    $(MAKE) --no-print-directory -C $$(dirname $$elf) clean; \
 	done
-	@rm -rf $(OUTDIR) $(RELDIR) $(FIRM) $(FIRMD) $(VRAM_TAR) $(LANGUAGE_INL) $(TRF_FILES)
+	@rm -rf $(OUTDIR) $(RELDIR) $(FIRM) $(FIRMD) $(VRAM_TAR) $(LANGUAGE_INL) $(TRF_FILES) arm9/build_sim arm11/build_sim
 
 unmarked_readme: .FORCE
 	@$(PY3) utils/unmark.py -f README.md data/README_internal.md
+
+# Never allow the test-only fault-injection build into a release.
+ifeq ($(filter release,$(MAKECMDGOALS)),release)
+ifneq ($(filter-out 0,$(FIXER_SIM)),)
+$(error FIXER_SIM must not be set for release builds)
+endif
+endif
 
 release: clean unmarked_readme
 	@$(MAKE) --no-print-directory firm

@@ -27,4 +27,31 @@ u32 InjectHealthAndSafety(const char* path, const char* destdrv);
 u32 BuildTitleKeyInfo(const char* path, bool dec, bool dump);
 u32 BuildSeedInfo(const char* path, bool dump);
 u32 GetGoodName(char* name, const char* path, bool quick);
+// Returned by AttemptFixNcsdFile when the cartridge stopped responding. Chosen so
+// it can never collide with the per-region result bits (which are 0..7).
+#define FIXRES_CART_STOPPED 0xFFFFFFFFu
+// Returned when the cartridge header could not be read (message already shown).
+#define FIXRES_HEADER_FAILED 0xFFFFFFFEu
 u32 AttemptFixNcsdFile(const char* path, bool log, bool autoskip);
+
+// User-tunable fixer behaviour, set from the pre-flight screen. Defaults match
+// the values that were previously hard-coded.
+typedef struct {
+    bool autoskip;             // skip a bad block automatically at the retry limit
+    bool log;                  // write fix_report_*.txt
+    bool refresh_every_read;   // send a cartridge refresh on every read (slow)
+    u32 retries_before_skip;   // re-reads before offering/auto-skipping a block
+    u32 stuck_limit;           // identical failed reads before a block is unfixable
+} FixerConfig;
+
+#define FIXER_CFG_DEFAULT_RETRIES 500
+#define FIXER_CFG_DEFAULT_STUCK    50
+#define FIXER_CFG_MAX_RETRIES      100000
+#define FIXER_CFG_MAX_STUCK        10000
+
+// Saved pre-flight settings (remembered across runs).
+#define FIXER_CFG_PATH OUTPUT_PATH "/fixer.cfg"
+void FixerCfg_Load(FixerConfig* cfg);
+void FixerCfg_Save(const FixerConfig* cfg);
+
+extern FixerConfig fixer_cfg;

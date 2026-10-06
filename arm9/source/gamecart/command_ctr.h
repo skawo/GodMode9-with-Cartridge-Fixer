@@ -6,9 +6,10 @@
 
 #include "common.h"
 
-void CTR_Refresh(void);
+bool CTR_Refresh(void);
+void CTR_ResetRefreshCount(void);
 void CTR_CmdReadSectorSD(u8* aBuffer, u32 aSector);
-void CTR_CmdReadData(u32 sector, u32 length, u32 blocks, void* buffer);
+bool CTR_CmdReadData(u32 sector, u32 length, u32 blocks, void* buffer);
 void CTR_CmdReadHeader(void* buffer);
 void CTR_CmdReadUniqueID(void* buffer);
 u32 CTR_CmdGetSecureId(u32 rand1, u32 rand2);

@@ -185,8 +185,12 @@ void Cart_Secure_Init(u32 *buf, u32 *out)
 
     ARM_WaitCycles(0xF0000 * 8);
 
-    CTR_SetSecKey(CartID2);
-    CTR_SetSecSeed(out, true);
+    // A non-responding cartridge would otherwise spend CTR_CMD_TIMEOUT_MS per
+    // command here; bail out as soon as a step fails.
+    if (!CTR_SetSecKey(CartID2))
+        return;
+    if (!CTR_SetSecSeed(out, true))
+        return;
 
     rand1 = 0x42434445;//*((vu32*)0x10011000);
     rand2 = 0x46474849;//*((vu32*)0x10011010);
@@ -195,15 +199,18 @@ void Cart_Secure_Init(u32 *buf, u32 *out)
 
     out[3] = BSWAP32(rand2);
     out[2] = BSWAP32(rand1);
-    CTR_SetSecSeed(out, false);
+    if (!CTR_SetSecSeed(out, false))
+        return;
 
     u32 test = 0;
     const u32 A2_cmd[4] = { 0xA2000000, 0x00000000, rand1, rand2 };
-    CTR_SendCommand(A2_cmd, 4, 1, 0x701002C, &test);
+    if (!CTR_SendCommand(A2_cmd, 4, 1, 0x701002C, &test))
+        return;
 
     u32 test2 = 0;
     const u32 A3_cmd[4] = { 0xA3000000, 0x00000000, rand1, rand2 };
-    CTR_SendCommand(A3_cmd, 4, 1, 0x701002C, &test2);
+    if (!CTR_SendCommand(A3_cmd, 4, 1, 0x701002C, &test2))
+        return;
 
     if(test==CartID && test2==CartID2)
     {

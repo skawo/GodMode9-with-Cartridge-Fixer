@@ -9,6 +9,7 @@
 #include "touchcal.h"
 #include "fs.h"
 #include "utils.h"
+#include "fixerui.h"
 #include "nand.h"
 #include "gamecart.h"
 #include "virtual.h"
@@ -157,7 +158,13 @@ u32 SplashInit(const char* modestr) {
         "--------------------------------", "https://github.com/d0k3/GodMode9",
         "Releases:", "https://github.com/d0k3/GodMode9/releases/", // this won't fit with a 8px width font
         "Hourlies:", "https://d0k3.secretalgorithm.com/");
-    DrawStringF(TOP_SCREEN, 0, 0, COLOR_STD_FONT, COLOR_STD_BG, "Cartridge Fixer Fork v1.92 by Skawo. \nThanks to Pleasehelpme2, BreadLoaf, themmj, glauberlima, voltar324.");
+    DrawStringF(TOP_SCREEN, 0, 0, COLOR_STD_FONT, COLOR_STD_BG, "Cartridge Fixer Fork v1.92 by Skawo. \nThanks to Pleasehelpme2, BreadLoaf, themmj, glauberlima, voltar324.%s",
+#ifdef FIXER_SIM
+        "\n*** SIM BUILD ***"
+#else
+        ""
+#endif
+        );
     DrawStringF(BOT_SCREEN, pos_xu, pos_yu, COLOR_STD_FONT, COLOR_STD_BG, "%s", loadstr);
     DrawStringF(BOT_SCREEN, pos_xb, pos_yu, COLOR_STD_FONT, COLOR_STD_BG, "built: " DBUILTL);
 
@@ -1629,34 +1636,24 @@ u32 FileHandlerMenu(char* current_path, u32* cursor, u32* scroll, PaneData** pan
             return 0;
         }
 
-        bool log = false;
-        bool autoskip = false;
-        
-        bool YHeld = CheckButton(BUTTON_Y);
-        bool XHeld = CheckButton(BUTTON_X);
-        bool SelectHeld = CheckButton(BUTTON_SELECT);
+        // Start from the saved settings (falling back to built-in defaults); the
+        // pre-flight screen is the single source of truth.
+        FixerCfg_Load(&fixer_cfg);
+        if (!FixerUI_Preflight(file_path, &fixer_cfg))
+            return 0;
+        FixerCfg_Save(&fixer_cfg);
 
-        if (YHeld) {
-            ShowPrompt(false, "Logging has been turned on.");
-            log = true;
-        }
-        if (XHeld) {
-            ShowPrompt(false, "Autoskip is on.");
-            autoskip = true;
-        }
+        refresh_call_every = fixer_cfg.refresh_every_read ? 0 : 10000;
 
-        if (SelectHeld) {
-            if (ShowPrompt(true, "This will run refresh on EVERY read.\nOnly use this option for broken cartridges.\nAre you SURE you want to do this?"))
-                refresh_call_every = 0;
-            else
-                return 0;
-        }
-
-        if (AttemptFixNcsdFile(file_path, log, autoskip) == 0) {
+        u32 fixres = AttemptFixNcsdFile(file_path, fixer_cfg.log, fixer_cfg.autoskip);
+        if (fixres == 0) {
             if (!bad_chunks)
                 ShowPrompt(false, "Finished.\n\n%d fixed chunks,\n0 unfixable chunks.\n\nRun verify.", fixed_chunks);
             else
                 ShowPrompt(false, "Finished.\n\n%d fixed chunks,\n%d unfixable chunks.", fixed_chunks, bad_chunks);
+        }
+        else if ((fixres == FIXRES_CART_STOPPED) || (fixres == FIXRES_HEADER_FAILED)) {
+            // the specific "stopped responding" / "cannot read header" message was already shown
         }
         else
             ShowPrompt(false, "Corruption fixer failed.");
